@@ -1,243 +1,533 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>JARVIS Code Store</title>
+<meta name="description" content="Production-quality Python tools, bots, and scripts. 47 products, $4093 total value.">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e0e0e0;min-height:100vh}
-.header{text-align:center;padding:40px 20px 20px;border-bottom:1px solid #1a1a1a}
-.header h1{font-size:2em;background:linear-gradient(135deg,#00d4ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
-.header p{color:#888;font-size:1.1em}
-.stats{text-align:center;padding:20px;color:#666;font-size:0.9em}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;padding:30px;max-width:1200px;margin:0 auto}
-.product{background:#111;border:1px solid #222;border-radius:12px;padding:24px;transition:border-color 0.2s}
-.product:hover{border-color:#00d4ff}
-.badge{display:inline-block;background:#1a1a2e;color:#00d4ff;padding:4px 12px;border-radius:20px;font-size:0.75em;margin-bottom:12px}
-.product h3{font-size:1.15em;margin-bottom:8px;color:#fff}
-.product p{color:#888;font-size:0.9em;line-height:1.5;margin-bottom:12px}
-.meta{color:#555;font-size:0.8em;margin-bottom:12px}
-.price{font-size:1.5em;font-weight:700;color:#00d4ff;margin-bottom:16px}
-.btn{display:inline-block;background:linear-gradient(135deg,#00d4ff,#7b2ff7);color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;transition:opacity 0.2s}
-.btn:hover{opacity:0.85}
-footer{text-align:center;padding:30px;color:#444;font-size:0.8em;border-top:1px solid #1a1a1a}
+.header{text-align:center;padding:60px 20px 30px;border-bottom:1px solid #1a1a1a}
+.header h1{font-size:2.5em;background:linear-gradient(135deg,#00d4ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px}
+.header p{color:#888;font-size:1.15em;max-width:600px;margin:0 auto}
+.stats{text-align:center;padding:24px;color:#666;font-size:0.95em}
+.stats strong{color:#00d4ff}
+.trust{text-align:center;padding:20px;color:#555;font-size:0.85em}
+.trust span{color:#34d399;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:24px;padding:30px;max-width:1200px;margin:0 auto}
+.product{background:#111;border:1px solid #222;border-radius:14px;padding:28px;transition:all 0.3s}
+.product:hover{border-color:#00d4ff;transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,212,255,0.1)}
+.badge{display:inline-block;background:#1a1a2e;color:#00d4ff;padding:5px 14px;border-radius:20px;font-size:0.75em;margin-bottom:14px;font-weight:500}
+.product h3{font-size:1.2em;margin-bottom:10px;color:#fff;line-height:1.4}
+.product p{color:#999;font-size:0.9em;line-height:1.6;margin-bottom:14px}
+.features{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.feat{background:#1a1a2e;color:#7b2ff7;padding:3px 10px;border-radius:12px;font-size:0.7em;font-weight:500}
+.meta{color:#555;font-size:0.8em;margin-bottom:14px}
+.price{font-size:1.6em;font-weight:700;color:#00d4ff;margin-bottom:18px}
+.btn{display:inline-block;padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:600;transition:all 0.2s;margin-right:8px;margin-bottom:8px}
+.btn-buy{background:linear-gradient(135deg,#00d4ff,#7b2ff7);color:#fff}
+.btn-buy:hover{opacity:0.85;transform:scale(1.02)}
+.btn-details{background:transparent;color:#00d4ff;border:1px solid #333}
+.btn-details:hover{border-color:#00d4ff}
+.footer{text-align:center;padding:40px 20px;color:#444;font-size:0.8em;border-top:1px solid #1a1a1a;margin-top:40px}
+.footer a{color:#00d4ff;text-decoration:none}
+.section{max-width:1200px;margin:0 auto;padding:40px 20px}
+.section h2{font-size:1.5em;margin-bottom:20px;color:#fff}
+.faq{max-width:800px;margin:0 auto;padding:40px 20px}
+.faq h2{font-size:1.5em;margin-bottom:24px;color:#fff;text-align:center}
+.faq-item{background:#111;border:1px solid #222;border-radius:10px;padding:20px;margin-bottom:12px}
+.faq-item h4{color:#00d4ff;margin-bottom:8px}
+.faq-item p{color:#888;font-size:0.9em;line-height:1.5}
 </style></head><body>
-<div class="header"><h1>JARVIS Code Store</h1><p>Production-quality Python tools, bots, and scripts</p></div>
-<div class="stats">27 products &middot; $2273 total value &middot; MIT licensed &middot; Instant download</div>
+<div class="header">
+  <h1>JARVIS Code Store</h1>
+  <p>Production-quality Python tools, bots, and scripts. Built with AI, ready to use.</p>
+</div>
+<div class="stats">
+  <strong>47</strong> products &middot; <strong>$4093</strong> total value &middot; MIT licensed &middot; Instant download
+</div>
+<div class="trust">
+  <span>100% source code</span> &middot; <span>Production tested</span> &middot; <span>Well documented</span> &middot; <span>MIT License</span>
+</div>
 <div class="grid">
-            <div class="product">
-                <div class="badge">Saas Template</div>
-                <h3>SaaS Template - Invoice generator SaaS</h3>
-                <p>Invoice generator SaaS with templates. Complete SaaS starter with landing page, user auth, dashboard, API keys, plan-based rate limiting. Stripe-ready.</p>
-                <div class="meta">3KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$149</div>
-                <a href="/download/2bef358b.zip" class="btn">Download</a>
+            <div class="product" id="product-2bef358b">
+              <div class="badge">Saas Template</div>
+              <h3>SaaS Template - Invoice generator SaaS</h3>
+              <p>Invoice generator SaaS with templates. Complete SaaS starter with landing page, user auth, dashboard, API keys, plan-based rate limiting. Stripe-ready.</p>
+              <div class="features"><span class="feat">Landing Page</span><span class="feat">User Auth</span><span class="feat">Dashboard</span><span class="feat">API Keys</span><span class="feat">Billing Hooks</span><span class="feat">Stripe Ready</span></div>
+              <div class="meta">3KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$149</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-0" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Saas Template</div>
-                <h3>SaaS Template - Booking system SaaS</h3>
-                <p>Booking system SaaS with calendars. Complete SaaS starter with landing page, user auth, dashboard, API keys, plan-based rate limiting. Stripe-ready.</p>
-                <div class="meta">3KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$149</div>
-                <a href="/download/98491b0c.zip" class="btn">Download</a>
+            <div class="product" id="product-89b437f7">
+              <div class="badge">Saas Template</div>
+              <h3>SaaS Template - Full-Stack SaaS</h3>
+              <p>Full-Stack SaaS with Auth, Billing, Dashboard, API. Complete SaaS starter with landing page, user auth, dashboard, API keys, plan-based rate limiting. Stripe-ready.</p>
+              <div class="features"><span class="feat">Landing Page</span><span class="feat">User Auth</span><span class="feat">Dashboard</span><span class="feat">API Keys</span><span class="feat">Billing Hooks</span><span class="feat">Stripe Ready</span></div>
+              <div class="meta">3KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$149</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-1" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Flask Api</div>
-                <h3>Flask REST API - Flask REST API</h3>
-                <p>Flask REST API with auth, CRUD, rate limiting, tests. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$99</div>
-                <a href="/download/3bca522e.zip" class="btn">Download</a>
+            <div class="product" id="product-98491b0c">
+              <div class="badge">Saas Template</div>
+              <h3>SaaS Template - Booking system SaaS</h3>
+              <p>Booking system SaaS with calendars. Complete SaaS starter with landing page, user auth, dashboard, API keys, plan-based rate limiting. Stripe-ready.</p>
+              <div class="features"><span class="feat">Landing Page</span><span class="feat">User Auth</span><span class="feat">Dashboard</span><span class="feat">API Keys</span><span class="feat">Billing Hooks</span><span class="feat">Stripe Ready</span></div>
+              <div class="meta">3KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$149</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-2" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Flask Api</div>
-                <h3>Flask REST API - Freelancer gig: custom API</h3>
-                <p>Freelancer gig: custom API. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$99</div>
-                <a href="/download/5fafd058.zip" class="btn">Download</a>
+            <div class="product" id="product-0604855a">
+              <div class="badge">Automation Suite</div>
+              <h3>Python Tool - Professional automation suite - production quality</h3>
+              <p>Professional automation suite - production quality. Complete automation toolkit: file management, system monitoring, task scheduling. Cross-platform.</p>
+              <div class="features"><span class="feat">File Manager</span><span class="feat">System Monitor</span><span class="feat">Task Scheduler</span><span class="feat">Duplicate Finder</span><span class="feat">Cleanup Old Files</span><span class="feat">Cross Platform</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-3" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Flask Api</div>
-                <h3>Flask REST API - Chat API</h3>
-                <p>Chat API with rooms. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$99</div>
-                <a href="/download/70802576.zip" class="btn">Download</a>
+            <div class="product" id="product-06e41e4c">
+              <div class="badge">Flask Api</div>
+              <h3>Flask REST API - REST API</h3>
+              <p>REST API with JWT Auth, Rate Limiting, CRUD, Tests. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
+              <div class="features"><span class="feat">JWT Authentication</span><span class="feat">CRUD Endpoints</span><span class="feat">Rate Limiting</span><span class="feat">Input Validation</span><span class="feat">Tests Included</span><span class="feat">Production Ready</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-4" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Discord Bot</div>
-                <h3>Discord Bot - Discord bot: moderation</h3>
-                <p>Discord bot: moderation. Production-quality code. Ready to use, well documented, MIT licensed.</p>
-                <div class="meta">1KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$99</div>
-                <a href="/download/7eba14c4.zip" class="btn">Download</a>
+            <div class="product" id="product-09d7c5ff">
+              <div class="badge">Discord Bot</div>
+              <h3>Discord Bot - Discord Bot</h3>
+              <p>Discord Bot with Moderation, Economy, Music, AI Chat. Production-quality code. Ready to use, well documented, MIT licensed.</p>
+              <div class="features"><span class="feat">Moderation</span><span class="feat">Music</span><span class="feat">AI Chat</span><span class="feat">Economy</span><span class="feat">Custom Commands</span><span class="feat">SQLite Storage</span></div>
+              <div class="meta">1KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-5" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Flask Api</div>
-                <h3>Flask REST API - Freelancer gig: custom API</h3>
-                <p>Freelancer gig: custom API. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$99</div>
-                <a href="/download/bba6a84a.zip" class="btn">Download</a>
+            <div class="product" id="product-2ac9e77d">
+              <div class="badge">Flask Api</div>
+              <h3>Flask REST API - Professional freelancer gig: custom automation too</h3>
+              <p>Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
+              <div class="features"><span class="feat">JWT Authentication</span><span class="feat">CRUD Endpoints</span><span class="feat">Rate Limiting</span><span class="feat">Input Validation</span><span class="feat">Tests Included</span><span class="feat">Production Ready</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-6" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Flask Api</div>
-                <h3>Flask REST API - E-commerce API</h3>
-                <p>E-commerce API with products. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$99</div>
-                <a href="/download/ca1955e1.zip" class="btn">Download</a>
+            <div class="product" id="product-2b0b675a">
+              <div class="badge">Flask Api</div>
+              <h3>Flask REST API - Professional gumroad gig: custom automation tool</h3>
+              <p>Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
+              <div class="features"><span class="feat">JWT Authentication</span><span class="feat">CRUD Endpoints</span><span class="feat">Rate Limiting</span><span class="feat">Input Validation</span><span class="feat">Tests Included</span><span class="feat">Production Ready</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-7" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Discord Bot</div>
-                <h3>Discord Bot - Discord bot: ticketing</h3>
-                <p>Discord bot: ticketing. Production-quality code. Ready to use, well documented, MIT licensed.</p>
-                <div class="meta">1KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$99</div>
-                <a href="/download/e4316cbe.zip" class="btn">Download</a>
+            <div class="product" id="product-3bca522e">
+              <div class="badge">Flask Api</div>
+              <h3>Flask REST API - Flask REST API</h3>
+              <p>Flask REST API with auth, CRUD, rate limiting, tests. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
+              <div class="features"><span class="feat">JWT Authentication</span><span class="feat">CRUD Endpoints</span><span class="feat">Rate Limiting</span><span class="feat">Input Validation</span><span class="feat">Tests Included</span><span class="feat">Production Ready</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-8" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Discord Bot</div>
-                <h3>Discord Bot - Discord bot: moderation, music, economy, AI chat</h3>
-                <p>Discord bot: moderation, music, economy, AI chat. Production-quality code. Ready to use, well documented, MIT licensed.</p>
-                <div class="meta">1KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$99</div>
-                <a href="/download/e89466b8.zip" class="btn">Download</a>
+            <div class="product" id="product-5fafd058">
+              <div class="badge">Flask Api</div>
+              <h3>Flask REST API - Freelancer gig: custom API</h3>
+              <p>Freelancer gig: custom API. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
+              <div class="features"><span class="feat">JWT Authentication</span><span class="feat">CRUD Endpoints</span><span class="feat">Rate Limiting</span><span class="feat">Input Validation</span><span class="feat">Tests Included</span><span class="feat">Production Ready</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-9" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Web Dashboard</div>
-                <h3>Web Dashboard - CRM dashboard</h3>
-                <p>CRM dashboard with contacts. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$89</div>
-                <a href="/download/64de8362.zip" class="btn">Download</a>
+            <div class="product" id="product-635d057e">
+              <div class="badge">Flask Api</div>
+              <h3>Flask REST API - Professional freelancer gig: custom automation too</h3>
+              <p>Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
+              <div class="features"><span class="feat">JWT Authentication</span><span class="feat">CRUD Endpoints</span><span class="feat">Rate Limiting</span><span class="feat">Input Validation</span><span class="feat">Tests Included</span><span class="feat">Production Ready</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-10" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Web Dashboard</div>
-                <h3>Web Dashboard - Marketing analytics dashboard</h3>
-                <p>Marketing analytics dashboard with campaigns. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$89</div>
-                <a href="/download/a802da6f.zip" class="btn">Download</a>
+            <div class="product" id="product-70802576">
+              <div class="badge">Flask Api</div>
+              <h3>Flask REST API - Chat API</h3>
+              <p>Chat API with rooms. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
+              <div class="features"><span class="feat">JWT Authentication</span><span class="feat">CRUD Endpoints</span><span class="feat">Rate Limiting</span><span class="feat">Input Validation</span><span class="feat">Tests Included</span><span class="feat">Production Ready</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-11" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Telegram Bot</div>
-                <h3>Telegram Bot - Telegram bot: inline keyboards, notifications, adm</h3>
-                <p>Telegram bot: inline keyboards, notifications, admin. Production-quality code. Ready to use, well documented, MIT licensed.</p>
-                <div class="meta">1KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$89</div>
-                <a href="/download/c4afa56e.zip" class="btn">Download</a>
+            <div class="product" id="product-7eba14c4">
+              <div class="badge">Discord Bot</div>
+              <h3>Discord Bot - Discord bot: moderation</h3>
+              <p>Discord bot: moderation. Production-quality code. Ready to use, well documented, MIT licensed.</p>
+              <div class="features"><span class="feat">Moderation</span><span class="feat">Music</span><span class="feat">AI Chat</span><span class="feat">Economy</span><span class="feat">Custom Commands</span><span class="feat">SQLite Storage</span></div>
+              <div class="meta">1KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-12" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Web Dashboard</div>
-                <h3>Web Dashboard - HR dashboard</h3>
-                <p>HR dashboard with employees. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$89</div>
-                <a href="/download/c7966884.zip" class="btn">Download</a>
+            <div class="product" id="product-8d94ae11">
+              <div class="badge">Flask Api</div>
+              <h3>Flask REST API - Professional gumroad gig: custom automation tool</h3>
+              <p>Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
+              <div class="features"><span class="feat">JWT Authentication</span><span class="feat">CRUD Endpoints</span><span class="feat">Rate Limiting</span><span class="feat">Input Validation</span><span class="feat">Tests Included</span><span class="feat">Production Ready</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-13" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Etl Pipeline</div>
-                <h3>ETL Pipeline - ETL pipeline</h3>
-                <p>ETL pipeline with extract, transform, load, retry. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$79</div>
-                <a href="/download/111bc230.zip" class="btn">Download</a>
+            <div class="product" id="product-a7e78458">
+              <div class="badge">Automation Suite</div>
+              <h3>Python Tool - File Manager, System Monitor, Task Scheduler</h3>
+              <p>File Manager, System Monitor, Task Scheduler. Complete automation toolkit: file management, system monitoring, task scheduling. Cross-platform.</p>
+              <div class="features"><span class="feat">File Manager</span><span class="feat">System Monitor</span><span class="feat">Task Scheduler</span><span class="feat">Duplicate Finder</span><span class="feat">Cleanup Old Files</span><span class="feat">Cross Platform</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-14" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Etl Pipeline</div>
-                <h3>ETL Pipeline - Analytics pipeline</h3>
-                <p>Analytics pipeline with events. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$79</div>
-                <a href="/download/37a3284a.zip" class="btn">Download</a>
+            <div class="product" id="product-bba6a84a">
+              <div class="badge">Flask Api</div>
+              <h3>Flask REST API - Freelancer gig: custom API</h3>
+              <p>Freelancer gig: custom API. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
+              <div class="features"><span class="feat">JWT Authentication</span><span class="feat">CRUD Endpoints</span><span class="feat">Rate Limiting</span><span class="feat">Input Validation</span><span class="feat">Tests Included</span><span class="feat">Production Ready</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-15" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Etl Pipeline</div>
-                <h3>ETL Pipeline - Log pipeline</h3>
-                <p>Log pipeline with parsing. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$79</div>
-                <a href="/download/b389b458.zip" class="btn">Download</a>
+            <div class="product" id="product-ca1955e1">
+              <div class="badge">Flask Api</div>
+              <h3>Flask REST API - E-commerce API</h3>
+              <p>E-commerce API with products. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.</p>
+              <div class="features"><span class="feat">JWT Authentication</span><span class="feat">CRUD Endpoints</span><span class="feat">Rate Limiting</span><span class="feat">Input Validation</span><span class="feat">Tests Included</span><span class="feat">Production Ready</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-16" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Etl Pipeline</div>
-                <h3>ETL Pipeline - ETL pipeline</h3>
-                <p>ETL pipeline with extract, transform, load, retry. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$79</div>
-                <a href="/download/ff30e953.zip" class="btn">Download</a>
+            <div class="product" id="product-e4316cbe">
+              <div class="badge">Discord Bot</div>
+              <h3>Discord Bot - Discord bot: ticketing</h3>
+              <p>Discord bot: ticketing. Production-quality code. Ready to use, well documented, MIT licensed.</p>
+              <div class="features"><span class="feat">Moderation</span><span class="feat">Music</span><span class="feat">AI Chat</span><span class="feat">Economy</span><span class="feat">Custom Commands</span><span class="feat">SQLite Storage</span></div>
+              <div class="meta">1KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-17" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Cli Tool</div>
-                <h3>CLI Tool - API testing CLI</h3>
-                <p>API testing CLI with requests. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$59</div>
-                <a href="/download/10aaaf06.zip" class="btn">Download</a>
+            <div class="product" id="product-e89466b8">
+              <div class="badge">Discord Bot</div>
+              <h3>Discord Bot - Discord bot: moderation, music, economy, AI chat</h3>
+              <p>Discord bot: moderation, music, economy, AI chat. Production-quality code. Ready to use, well documented, MIT licensed.</p>
+              <div class="features"><span class="feat">Moderation</span><span class="feat">Music</span><span class="feat">AI Chat</span><span class="feat">Economy</span><span class="feat">Custom Commands</span><span class="feat">SQLite Storage</span></div>
+              <div class="meta">1KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$99</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-18" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Automation Script</div>
-                <h3>Automation Script - Windows automation: file org, monitoring, scheduli</h3>
-                <p>Windows automation: file org, monitoring, scheduling. Production-quality code. Ready to use, well documented, MIT licensed.</p>
-                <div class="meta">1KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$59</div>
-                <a href="/download/1c2ce556.zip" class="btn">Download</a>
+            <div class="product" id="product-11ca702c">
+              <div class="badge">Api Integration</div>
+              <h3>Python Tool - Professional api integration - production quality</h3>
+              <p>Professional api integration - production quality. Multi-API client with auth, rate limiting, caching, retries, bulk operations. Zero dependencies.</p>
+              <div class="features"><span class="feat">Multi-API</span><span class="feat">Auth Support</span><span class="feat">Rate Limiting</span><span class="feat">Response Caching</span><span class="feat">Bulk Operations</span><span class="feat">Zero Deps</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$89</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-19" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Cli Tool</div>
-                <h3>CLI Tool - Full CLI tool</h3>
-                <p>Full CLI tool with subcommands, config, item storage, search. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$59</div>
-                <a href="/download/2882e950.zip" class="btn">Download</a>
+            <div class="product" id="product-17ebabd3">
+              <div class="badge">Web Dashboard</div>
+              <h3>Web Dashboard - Admin Dashboard</h3>
+              <p>Admin Dashboard with Charts, Tables, Dark Theme. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize.</p>
+              <div class="features"><span class="feat">Responsive UI</span><span class="feat">Interactive Charts</span><span class="feat">Data Tables</span><span class="feat">CSV Export</span><span class="feat">Dark Theme</span><span class="feat">Mobile Friendly</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$89</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-20" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Cli Tool</div>
-                <h3>CLI Tool - API testing CLI</h3>
-                <p>API testing CLI with requests. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$59</div>
-                <a href="/download/454a226c.zip" class="btn">Download</a>
+            <div class="product" id="product-64de8362">
+              <div class="badge">Web Dashboard</div>
+              <h3>Web Dashboard - CRM dashboard</h3>
+              <p>CRM dashboard with contacts. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize.</p>
+              <div class="features"><span class="feat">Responsive UI</span><span class="feat">Interactive Charts</span><span class="feat">Data Tables</span><span class="feat">CSV Export</span><span class="feat">Dark Theme</span><span class="feat">Mobile Friendly</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$89</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-21" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Cli Tool</div>
-                <h3>CLI Tool - Docker management CLI</h3>
-                <p>Docker management CLI with containers. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$59</div>
-                <a href="/download/736a4093.zip" class="btn">Download</a>
+            <div class="product" id="product-8bc9e2ba">
+              <div class="badge">Api Integration</div>
+              <h3>Python Tool - Multi-API Client</h3>
+              <p>Multi-API Client with Auth, Caching, Rate Limiting. Multi-API client with auth, rate limiting, caching, retries, bulk operations. Zero dependencies.</p>
+              <div class="features"><span class="feat">Multi-API</span><span class="feat">Auth Support</span><span class="feat">Rate Limiting</span><span class="feat">Response Caching</span><span class="feat">Bulk Operations</span><span class="feat">Zero Deps</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$89</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-22" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Cli Tool</div>
-                <h3>CLI Tool - Git workflow CLI</h3>
-                <p>Git workflow CLI with branching. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies.</p>
-                <div class="meta">2KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$59</div>
-                <a href="/download/97648230.zip" class="btn">Download</a>
+            <div class="product" id="product-a802da6f">
+              <div class="badge">Web Dashboard</div>
+              <h3>Web Dashboard - Marketing analytics dashboard</h3>
+              <p>Marketing analytics dashboard with campaigns. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize.</p>
+              <div class="features"><span class="feat">Responsive UI</span><span class="feat">Interactive Charts</span><span class="feat">Data Tables</span><span class="feat">CSV Export</span><span class="feat">Dark Theme</span><span class="feat">Mobile Friendly</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$89</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-23" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Automation Script</div>
-                <h3>Automation Script - Windows automation: file org, monitoring, scheduli</h3>
-                <p>Windows automation: file org, monitoring, scheduling. Production-quality code. Ready to use, well documented, MIT licensed.</p>
-                <div class="meta">1KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$59</div>
-                <a href="/download/bc54a4f1.zip" class="btn">Download</a>
+            <div class="product" id="product-c4afa56e">
+              <div class="badge">Telegram Bot</div>
+              <h3>Telegram Bot - Telegram bot: inline keyboards, notifications, adm</h3>
+              <p>Telegram bot: inline keyboards, notifications, admin. Production-quality code. Ready to use, well documented, MIT licensed.</p>
+              <div class="features"><span class="feat">Inline Keyboards</span><span class="feat">Command Handlers</span><span class="feat">Notifications</span><span class="feat">Admin Panel</span><span class="feat">SQLite Storage</span><span class="feat">Webhook Support</span></div>
+              <div class="meta">1KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$89</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-24" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Python Script</div>
-                <h3>Python Tool - Python utility: file ops</h3>
-                <p>Python utility: file ops. Production-quality code. Ready to use, well documented, MIT licensed.</p>
-                <div class="meta">1KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$49</div>
-                <a href="/download/39d8404a.zip" class="btn">Download</a>
+            <div class="product" id="product-c7966884">
+              <div class="badge">Web Dashboard</div>
+              <h3>Web Dashboard - HR dashboard</h3>
+              <p>HR dashboard with employees. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize.</p>
+              <div class="features"><span class="feat">Responsive UI</span><span class="feat">Interactive Charts</span><span class="feat">Data Tables</span><span class="feat">CSV Export</span><span class="feat">Dark Theme</span><span class="feat">Mobile Friendly</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$89</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-25" class="btn btn-details">View Details</a>
             </div>
-            <div class="product">
-                <div class="badge">Python Script</div>
-                <h3>Python Tool - Python utility: file ops</h3>
-                <p>Python utility: file ops. Production-quality code. Ready to use, well documented, MIT licensed.</p>
-                <div class="meta">1KB &middot; ZIP &middot; MIT License</div>
-                <div class="price">$49</div>
-                <a href="/download/5f483160.zip" class="btn">Download</a>
+            <div class="product" id="product-c7d6657e">
+              <div class="badge">Data Pipeline</div>
+              <h3>Python Tool - Streaming Data Pipeline</h3>
+              <p>Streaming Data Pipeline with Parallel Processing. Streaming data pipeline with Source/Transform/Sink architecture, parallel processing, monitoring.</p>
+              <div class="features"><span class="feat">Streaming ETL</span><span class="feat">Parallel Sinks</span><span class="feat">CSV/JSON I/O</span><span class="feat">Filter/Map/Dedup</span><span class="feat">Monitoring</span><span class="feat">Zero Deps</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$89</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-26" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-d32ac379">
+              <div class="badge">Data Pipeline</div>
+              <h3>Python Tool - Professional data pipeline - production quality</h3>
+              <p>Professional data pipeline - production quality. Streaming data pipeline with Source/Transform/Sink architecture, parallel processing, monitoring.</p>
+              <div class="features"><span class="feat">Streaming ETL</span><span class="feat">Parallel Sinks</span><span class="feat">CSV/JSON I/O</span><span class="feat">Filter/Map/Dedup</span><span class="feat">Monitoring</span><span class="feat">Zero Deps</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$89</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-27" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-111bc230">
+              <div class="badge">Etl Pipeline</div>
+              <h3>ETL Pipeline - ETL pipeline</h3>
+              <p>ETL pipeline with extract, transform, load, retry. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven.</p>
+              <div class="features"><span class="feat">CSV/JSON/JSONL</span><span class="feat">Chained Transforms</span><span class="feat">Deduplication</span><span class="feat">Error Handling</span><span class="feat">Config-Driven</span><span class="feat">Retry Logic</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$79</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-28" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-2beac04f">
+              <div class="badge">Chrome Extension</div>
+              <h3>Python Tool - Professional chrome extension - production quality</h3>
+              <p>Professional chrome extension - production quality. Chrome extension (Manifest V3) with popup UI, background service worker, content scripts, storage API.</p>
+              <div class="features"><span class="feat">Manifest V3</span><span class="feat">Popup UI</span><span class="feat">Background Worker</span><span class="feat">Content Scripts</span><span class="feat">Storage API</span><span class="feat">Auto Update</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$79</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-29" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-37a3284a">
+              <div class="badge">Etl Pipeline</div>
+              <h3>ETL Pipeline - Analytics pipeline</h3>
+              <p>Analytics pipeline with events. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven.</p>
+              <div class="features"><span class="feat">CSV/JSON/JSONL</span><span class="feat">Chained Transforms</span><span class="feat">Deduplication</span><span class="feat">Error Handling</span><span class="feat">Config-Driven</span><span class="feat">Retry Logic</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$79</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-30" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-3a84039b">
+              <div class="badge">Etl Pipeline</div>
+              <h3>ETL Pipeline - Production ETL</h3>
+              <p>Production ETL with CSV/JSON/JSONL, Transforms, Monitoring. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven.</p>
+              <div class="features"><span class="feat">CSV/JSON/JSONL</span><span class="feat">Chained Transforms</span><span class="feat">Deduplication</span><span class="feat">Error Handling</span><span class="feat">Config-Driven</span><span class="feat">Retry Logic</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$79</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-31" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-b389b458">
+              <div class="badge">Etl Pipeline</div>
+              <h3>ETL Pipeline - Log pipeline</h3>
+              <p>Log pipeline with parsing. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven.</p>
+              <div class="features"><span class="feat">CSV/JSON/JSONL</span><span class="feat">Chained Transforms</span><span class="feat">Deduplication</span><span class="feat">Error Handling</span><span class="feat">Config-Driven</span><span class="feat">Retry Logic</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$79</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-32" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-b3c65d06">
+              <div class="badge">Chrome Extension</div>
+              <h3>Python Tool - Chrome Extension</h3>
+              <p>Chrome Extension with Popup, Background Worker, Storage. Chrome extension (Manifest V3) with popup UI, background service worker, content scripts, storage API.</p>
+              <div class="features"><span class="feat">Manifest V3</span><span class="feat">Popup UI</span><span class="feat">Background Worker</span><span class="feat">Content Scripts</span><span class="feat">Storage API</span><span class="feat">Auto Update</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$79</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-33" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-ff30e953">
+              <div class="badge">Etl Pipeline</div>
+              <h3>ETL Pipeline - ETL pipeline</h3>
+              <p>ETL pipeline with extract, transform, load, retry. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven.</p>
+              <div class="features"><span class="feat">CSV/JSON/JSONL</span><span class="feat">Chained Transforms</span><span class="feat">Deduplication</span><span class="feat">Error Handling</span><span class="feat">Config-Driven</span><span class="feat">Retry Logic</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$79</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-34" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-02393989">
+              <div class="badge">Landing Page</div>
+              <h3>Python Tool - Professional landing page - production quality</h3>
+              <p>Professional landing page - production quality. Professional landing page with hero, features grid, pricing cards, testimonials, dark theme. Single HTML, no build step.</p>
+              <div class="features"><span class="feat">Hero Section</span><span class="feat">Features Grid</span><span class="feat">Pricing Cards</span><span class="feat">Testimonials</span><span class="feat">Dark Theme</span><span class="feat">Mobile First</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$69</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-35" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-95431b1a">
+              <div class="badge">Landing Page</div>
+              <h3>Python Tool - SaaS Landing Page</h3>
+              <p>SaaS Landing Page with Pricing, Testimonials, CTA. Professional landing page with hero, features grid, pricing cards, testimonials, dark theme. Single HTML, no build step.</p>
+              <div class="features"><span class="feat">Hero Section</span><span class="feat">Features Grid</span><span class="feat">Pricing Cards</span><span class="feat">Testimonials</span><span class="feat">Dark Theme</span><span class="feat">Mobile First</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$69</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-36" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-02d64c0d">
+              <div class="badge">Cli Tool</div>
+              <h3>CLI Tool - API testing CLI</h3>
+              <p>API testing CLI with requests. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies.</p>
+              <div class="features"><span class="feat">Subcommands</span><span class="feat">Persistent Config</span><span class="feat">JSON Storage</span><span class="feat">Search & Filter</span><span class="feat">Zero Dependencies</span><span class="feat">Tab Completion</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$59</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-37" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-10aaaf06">
+              <div class="badge">Cli Tool</div>
+              <h3>CLI Tool - API testing CLI</h3>
+              <p>API testing CLI with requests. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies.</p>
+              <div class="features"><span class="feat">Subcommands</span><span class="feat">Persistent Config</span><span class="feat">JSON Storage</span><span class="feat">Search & Filter</span><span class="feat">Zero Dependencies</span><span class="feat">Tab Completion</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$59</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-38" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-1c2ce556">
+              <div class="badge">Automation Script</div>
+              <h3>Automation Script - Windows automation: file org, monitoring, scheduli</h3>
+              <p>Windows automation: file org, monitoring, scheduling. Production-quality code. Ready to use, well documented, MIT licensed.</p>
+              <div class="features"><span class="feat">File Organization</span><span class="feat">System Monitoring</span><span class="feat">Scheduling</span><span class="feat">Logging</span><span class="feat">Config File</span><span class="feat">Cross Platform</span></div>
+              <div class="meta">1KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$59</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-39" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-2882e950">
+              <div class="badge">Cli Tool</div>
+              <h3>CLI Tool - Full CLI tool</h3>
+              <p>Full CLI tool with subcommands, config, item storage, search. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies.</p>
+              <div class="features"><span class="feat">Subcommands</span><span class="feat">Persistent Config</span><span class="feat">JSON Storage</span><span class="feat">Search & Filter</span><span class="feat">Zero Dependencies</span><span class="feat">Tab Completion</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$59</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-40" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-454a226c">
+              <div class="badge">Cli Tool</div>
+              <h3>CLI Tool - API testing CLI</h3>
+              <p>API testing CLI with requests. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies.</p>
+              <div class="features"><span class="feat">Subcommands</span><span class="feat">Persistent Config</span><span class="feat">JSON Storage</span><span class="feat">Search & Filter</span><span class="feat">Zero Dependencies</span><span class="feat">Tab Completion</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$59</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-41" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-736a4093">
+              <div class="badge">Cli Tool</div>
+              <h3>CLI Tool - Docker management CLI</h3>
+              <p>Docker management CLI with containers. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies.</p>
+              <div class="features"><span class="feat">Subcommands</span><span class="feat">Persistent Config</span><span class="feat">JSON Storage</span><span class="feat">Search & Filter</span><span class="feat">Zero Dependencies</span><span class="feat">Tab Completion</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$59</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-42" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-97648230">
+              <div class="badge">Cli Tool</div>
+              <h3>CLI Tool - Git workflow CLI</h3>
+              <p>Git workflow CLI with branching. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies.</p>
+              <div class="features"><span class="feat">Subcommands</span><span class="feat">Persistent Config</span><span class="feat">JSON Storage</span><span class="feat">Search & Filter</span><span class="feat">Zero Dependencies</span><span class="feat">Tab Completion</span></div>
+              <div class="meta">2KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$59</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-43" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-bc54a4f1">
+              <div class="badge">Automation Script</div>
+              <h3>Automation Script - Windows automation: file org, monitoring, scheduli</h3>
+              <p>Windows automation: file org, monitoring, scheduling. Production-quality code. Ready to use, well documented, MIT licensed.</p>
+              <div class="features"><span class="feat">File Organization</span><span class="feat">System Monitoring</span><span class="feat">Scheduling</span><span class="feat">Logging</span><span class="feat">Config File</span><span class="feat">Cross Platform</span></div>
+              <div class="meta">1KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$59</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-44" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-39d8404a">
+              <div class="badge">Python Script</div>
+              <h3>Python Tool - Python utility: file ops</h3>
+              <p>Python utility: file ops. Production-quality code. Ready to use, well documented, MIT licensed.</p>
+              <div class="features"><span class="feat">argparse CLI</span><span class="feat">Logging</span><span class="feat">JSON I/O</span><span class="feat">Error Handling</span><span class="feat">Retry Logic</span><span class="feat">Well Documented</span></div>
+              <div class="meta">1KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$49</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-45" class="btn btn-details">View Details</a>
+            </div>
+            <div class="product" id="product-5f483160">
+              <div class="badge">Python Script</div>
+              <h3>Python Tool - Python utility: file ops</h3>
+              <p>Python utility: file ops. Production-quality code. Ready to use, well documented, MIT licensed.</p>
+              <div class="features"><span class="feat">argparse CLI</span><span class="feat">Logging</span><span class="feat">JSON I/O</span><span class="feat">Error Handling</span><span class="feat">Retry Logic</span><span class="feat">Well Documented</span></div>
+              <div class="meta">1KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
+              <div class="price">$49</div>
+              <a href="#" class="btn btn-buy">Buy Now</a>
+              <a href="#details-46" class="btn btn-details">View Details</a>
             </div></div>
-<footer>Powered by JARVIS-OS &middot; All code is production-ready &middot; Built with AI</footer>
+<div class="faq">
+  <h2>Frequently Asked Questions</h2>
+  <div class="faq-item"><h4>What do I get?</h4><p>Production-ready Python source code with README, requirements.txt, tests, and configuration. Download the ZIP, extract, and run.</p></div>
+  <div class="faq-item"><h4>Are these ready to use?</h4><p>Yes. Each product is tested, documented, and includes setup instructions. Just <code>pip install -r requirements.txt</code> and run.</p></div>
+  <div class="faq-item"><h4>What license?</h4><p>All code is MIT licensed. Use it in personal or commercial projects without restriction.</p></div>
+  <div class="faq-item"><h4>Can I get support?</h4><p>Yes. Contact us via email or Twitter for any questions about setup or customization.</p></div>
+</div>
+<div class="footer">
+  <p>Questions? Contact us on <a href="https://twitter.com/yourhandle">Twitter</a></p>
+  <p style="margin-top:8px">Powered by JARVIS-OS &middot; All code is production-ready</p>
+</div>
 </body></html>

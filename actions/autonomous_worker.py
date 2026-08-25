@@ -581,39 +581,77 @@ class AutonomousWorker:
         full_url = search_url + query.replace(" ", "+")
 
         jobs_found = []
-        try:
-            import urllib.request
-            import urllib.error
-            import re
-            import ssl as _local_ssl
-            ctx = _local_ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = _local_ssl.CERT_NONE
-            req = urllib.request.Request(full_url, headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            })
-            with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
-                html = resp.read().decode("utf-8", errors="replace")
 
-            if platform == "freelancer":
+        # Method 1: Try browser automation (pyautogui)
+        try:
+            from actions.browser_control import browser_control, FreelancerAutomation
+            browser_control({"action": "go_to", "url": full_url})
+            import time as _t
+            _t.sleep(3)
+            page_text = str(browser_control({"action": "select_all_and_copy"}))
+            if len(page_text) > 200:
+                import re
+                # Freelancer job titles often appear in h2/h3 or specific class patterns
+                for pattern in [
+                    r'(?:"|])([^"]{15,120})(?:"|])(?:\s*[\-\|]\s*Freelancer)',
+                    r'(?:project-title|job-title|ellipsis)[^>]*>([^<]{10,120})<',
+                    r'href="/projects/[^"]*"[^>]*>([^<]{10,120})<',
+                    r'<h[23][^>]*>\s*<a[^>]*>([^<]{10,120})</a>\s*</h[23]>',
+                    r'>([A-Z][^<]{15,100}(?:python|bot|scrape|api|automat|data|web|script|tool|dashboard|cli|pipeline)[^<]{0,50})<',
+                ]:
+                    titles = re.findall(pattern, page_text, re.I)
+                    if titles:
+                        seen = set()
+                        for t in titles:
+                            t = t.strip()
+                            if t not in seen and len(t) > 10:
+                                seen.add(t)
+                                jobs_found.append({"title": t, "budget": "?"})
+                        if jobs_found:
+                            break
+                if not jobs_found and len(page_text) > 500:
+                    # Fallback: extract any lines that look like job titles
+                    lines = page_text.split("\n")
+                    for line in lines:
+                        line = line.strip()
+                        if 20 < len(line) < 150 and not line.startswith("http") and not line.startswith("{"):
+                            keywords = ["python", "bot", "scrape", "api", "automat", "data", "web", "script",
+                                        "tool", "dashboard", "cli", "pipeline", "develop", "build", "create"]
+                            if any(k in line.lower() for k in keywords):
+                                if line not in {j["title"] for j in jobs_found}:
+                                    jobs_found.append({"title": line, "budget": "?"})
+                                if len(jobs_found) >= 5:
+                                    break
+        except Exception:
+            pass
+
+        # Method 2: Fallback to urllib if browser didn't find anything
+        if not jobs_found:
+            try:
+                import urllib.request
+                import urllib.error
+                import re
+                import ssl as _local_ssl
+                ctx = _local_ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = _local_ssl.CERT_NONE
+                req = urllib.request.Request(full_url, headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                })
+                with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
+                    html = resp.read().decode("utf-8", errors="replace")
                 titles = re.findall(r'class="[^"]*job[^"]*title[^"]*"[^>]*>([^<]+)<', html, re.I)
                 budgets = re.findall(r'class="[^"]*budget[^"]*"[^>]*>\s*\$?([\d,]+)', html, re.I)
                 for i, title in enumerate(titles[:5]):
                     budget = budgets[i] if i < len(budgets) else "?"
                     jobs_found.append({"title": title.strip(), "budget": budget})
-            elif platform == "upwork":
-                titles = re.findall(r'data-test="job-tile-title-link"[^>]*>([^<]+)<', html, re.I)
-                budgets = re.findall(r'class="[^"]*budget[^"]*"[^>]*>\s*\$?([\d,]+)', html, re.I)
-                for i, title in enumerate(titles[:5]):
-                    budget = budgets[i] if i < len(budgets) else "?"
-                    jobs_found.append({"title": title.strip(), "budget": budget})
-        except Exception:
-            pass
+            except Exception:
+                pass
 
         if jobs_found:
             lines = [f"Found {len(jobs_found)} jobs on {platform}:"]
-            for j in jobs_found:
-                lines.append(f"  - {j['title']} (${j['budget']})")
+            for j in jobs_found[:5]:
+                lines.append(f"  - {j['title'][:80]} (${j['budget']})")
                 job_entry = {
                     "id": hashlib.md5(f"{platform}{j['title']}{_now()}".encode()).hexdigest()[:8],
                     "platform": platform,
@@ -625,13 +663,12 @@ class AutonomousWorker:
                 }
                 self._pending.append(job_entry)
             self._save_all()
-            lines.append(f"\n{len(jobs_found)} jobs added to pending for your review.")
+            lines.append(f"\n{min(len(jobs_found), 5)} jobs added to pending. Say 'approve <id>' to apply.")
             return "\n".join(lines)
 
-        _open(full_url)
         return (f"Opened {platform} job search for '{query}'. "
-                f"No jobs could be scraped automatically. "
-                f"YOU must look at the results and tell me which jobs to apply to.")
+                f"Scraping returned no structured results. "
+                f"Check the browser and tell me which jobs to apply to.")
 
     def quick_apply(self, platform, skill):
         if not platform:
