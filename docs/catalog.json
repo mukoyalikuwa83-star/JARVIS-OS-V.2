@@ -1,0 +1,158 @@
+[
+  {
+    "id": "2bef358b",
+    "title": "SaaS Template - Invoice generator SaaS",
+    "price": 149,
+    "description": "Invoice generator SaaS with templates. Complete SaaS starter with landing page, user auth, dashboard, API keys, plan-based rate limiting. Stripe-ready."
+  },
+  {
+    "id": "98491b0c",
+    "title": "SaaS Template - Booking system SaaS",
+    "price": 149,
+    "description": "Booking system SaaS with calendars. Complete SaaS starter with landing page, user auth, dashboard, API keys, plan-based rate limiting. Stripe-ready."
+  },
+  {
+    "id": "3bca522e",
+    "title": "Flask REST API - Flask REST API",
+    "price": 99,
+    "description": "Flask REST API with auth, CRUD, rate limiting, tests. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "5fafd058",
+    "title": "Flask REST API - Freelancer gig: custom API",
+    "price": 99,
+    "description": "Freelancer gig: custom API. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "70802576",
+    "title": "Flask REST API - Chat API",
+    "price": 99,
+    "description": "Chat API with rooms. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "7eba14c4",
+    "title": "Discord Bot - Discord bot: moderation",
+    "price": 99,
+    "description": "Discord bot: moderation. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "bba6a84a",
+    "title": "Flask REST API - Freelancer gig: custom API",
+    "price": 99,
+    "description": "Freelancer gig: custom API. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "ca1955e1",
+    "title": "Flask REST API - E-commerce API",
+    "price": 99,
+    "description": "E-commerce API with products. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "e89466b8",
+    "title": "Discord Bot - Discord bot: moderation, music, economy, AI chat",
+    "price": 99,
+    "description": "Discord bot: moderation, music, economy, AI chat. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "64de8362",
+    "title": "Web Dashboard - CRM dashboard",
+    "price": 89,
+    "description": "CRM dashboard with contacts. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize."
+  },
+  {
+    "id": "a802da6f",
+    "title": "Web Dashboard - Marketing analytics dashboard",
+    "price": 89,
+    "description": "Marketing analytics dashboard with campaigns. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize."
+  },
+  {
+    "id": "c4afa56e",
+    "title": "Telegram Bot - Telegram bot: inline keyboards, notifications, adm",
+    "price": 89,
+    "description": "Telegram bot: inline keyboards, notifications, admin. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "c7966884",
+    "title": "Web Dashboard - HR dashboard",
+    "price": 89,
+    "description": "HR dashboard with employees. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize."
+  },
+  {
+    "id": "111bc230",
+    "title": "ETL Pipeline - ETL pipeline",
+    "price": 79,
+    "description": "ETL pipeline with extract, transform, load, retry. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven."
+  },
+  {
+    "id": "37a3284a",
+    "title": "ETL Pipeline - Analytics pipeline",
+    "price": 79,
+    "description": "Analytics pipeline with events. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven."
+  },
+  {
+    "id": "b389b458",
+    "title": "ETL Pipeline - Log pipeline",
+    "price": 79,
+    "description": "Log pipeline with parsing. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven."
+  },
+  {
+    "id": "ff30e953",
+    "title": "ETL Pipeline - ETL pipeline",
+    "price": 79,
+    "description": "ETL pipeline with extract, transform, load, retry. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven."
+  },
+  {
+    "id": "10aaaf06",
+    "title": "CLI Tool - API testing CLI",
+    "price": 59,
+    "description": "API testing CLI with requests. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies."
+  },
+  {
+    "id": "1c2ce556",
+    "title": "Automation Script - Windows automation: file org, monitoring, scheduli",
+    "price": 59,
+    "description": "Windows automation: file org, monitoring, scheduling. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "2882e950",
+    "title": "CLI Tool - Full CLI tool",
+    "price": 59,
+    "description": "Full CLI tool with subcommands, config, item storage, search. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies."
+  },
+  {
+    "id": "454a226c",
+    "title": "CLI Tool - API testing CLI",
+    "price": 59,
+    "description": "API testing CLI with requests. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies."
+  },
+  {
+    "id": "736a4093",
+    "title": "CLI Tool - Docker management CLI",
+    "price": 59,
+    "description": "Docker management CLI with containers. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies."
+  },
+  {
+    "id": "97648230",
+    "title": "CLI Tool - Git workflow CLI",
+    "price": 59,
+    "description": "Git workflow CLI with branching. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies."
+  },
+  {
+    "id": "bc54a4f1",
+    "title": "Automation Script - Windows automation: file org, monitoring, scheduli",
+    "price": 59,
+    "description": "Windows automation: file org, monitoring, scheduling. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "39d8404a",
+    "title": "Python Tool - Python utility: file ops",
+    "price": 49,
+    "description": "Python utility: file ops. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "5f483160",
+    "title": "Python Tool - Python utility: file ops",
+    "price": 49,
+    "description": "Python utility: file ops. Production-quality code. Ready to use, well documented, MIT licensed."
+  }
+]

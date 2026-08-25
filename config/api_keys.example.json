@@ -1,0 +1,11 @@
+{
+  "os_system": "windows",
+  "assistant_name": "Assistant",
+  "autonomy": "balanced",
+  "voice_name": "charon",
+  "live_model": "models/gemini-2.0-flash-live-preview-04-09",
+  "tts_provider": "gemini",
+  "tts_voice_id": "charon",
+  "camera_index": 0,
+  "gemini_api_key": "YOUR_GEMINI_API_KEY"
+}
