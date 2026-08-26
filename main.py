@@ -3128,32 +3128,41 @@ class JarvisLive:
         mic_device = _MIC_DEVICE_ID
         if mic_device is None:
             try:
-                import time as _t
                 devs = sd.query_devices()
-                best_rms = 0
-                best_idx = None
+                candidates = []
                 for i, d in enumerate(devs):
                     if d['max_input_channels'] < 1:
                         continue
                     if 'stereo mix' in d['name'].lower():
                         continue
+                    candidates.append((i, d))
+
+                working_device = None
+                for idx, dev in candidates:
                     try:
-                        sr = int(d.get('default_samplerate', 16000))
-                        audio = sd.rec(int(0.5 * sr), samplerate=sr, channels=1, dtype='int16', device=i)
-                        sd.wait()
-                        rms = float(np.sqrt(np.mean(audio.astype(np.float32) ** 2)))
-                        if rms > best_rms:
-                            best_rms = rms
-                            best_idx = i
+                        test_audio = []
+                        def test_cb(indata, frames, time_info, status):
+                            test_audio.append(indata.copy())
+                        sr = int(dev.get('default_samplerate', SEND_SAMPLE_RATE))
+                        with sd.InputStream(samplerate=sr, channels=1, dtype='int16',
+                                            blocksize=512, callback=test_cb, device=idx):
+                            import time as _t
+                            _t.sleep(0.3)
+                        if test_audio:
+                            all_audio = np.concatenate(test_audio)
+                            rms = float(np.sqrt(np.mean(all_audio.astype(np.float32) ** 2)))
+                            if rms > 100:
+                                working_device = idx
+                                print(f"[Assistant] Mic found: device {idx} ({dev['name']}) rms={rms:.1f}")
+                                break
                     except Exception:
                         pass
-                if best_idx is not None and best_rms > 50:
-                    mic_device = best_idx
-                    dev_name = devs[best_idx]['name']
-                    print(f"[Assistant] Mic auto-detected: device {mic_device} ({dev_name}) rms={best_rms:.1f}")
+
+                if working_device is not None:
+                    mic_device = working_device
                 else:
                     mic_device = None
-                    print("[Assistant] WARNING: No working mic found. Using default device.")
+                    print("[Assistant] No working mic found via InputStream. Using default.")
             except Exception as e:
                 print(f"[Assistant] Mic detection error: {e}")
                 mic_device = None
@@ -3215,22 +3224,48 @@ class JarvisLive:
             loop.call_soon_threadsafe(_safe_put)
 
         try:
-            stream_kwargs = dict(
-                samplerate=SEND_SAMPLE_RATE,
-                channels=CHANNELS,
-                dtype="int16",
-                blocksize=CHUNK_SIZE,
-                callback=callback,
-            )
-            if mic_device is not None:
-                stream_kwargs["device"] = mic_device
-            with sd.InputStream(**stream_kwargs):
-                print("[Assistant] 🎤 Mic stream open")
+            devices_to_try = [mic_device, None] if mic_device is not None else [None]
+            devs = sd.query_devices()
+            for i, d in enumerate(devs):
+                if d['max_input_channels'] > 0 and 'stereo mix' not in d['name'].lower():
+                    if i not in devices_to_try:
+                        devices_to_try.append(i)
+
+            opened = False
+            for dev_id in devices_to_try:
+                try:
+                    stream_kwargs = dict(
+                        samplerate=SEND_SAMPLE_RATE,
+                        channels=CHANNELS,
+                        dtype="int16",
+                        blocksize=CHUNK_SIZE,
+                        callback=callback,
+                    )
+                    if dev_id is not None:
+                        stream_kwargs["device"] = dev_id
+                    stream = sd.InputStream(**stream_kwargs)
+                    stream.start()
+                    dev_name = devs[dev_id]['name'] if dev_id is not None and dev_id < len(devs) else "default"
+                    print(f"[Assistant] Mic stream open (device {dev_id}: {dev_name})")
+                    opened = True
+                    try:
+                        while not self._shutdown_requested.is_set():
+                            await asyncio.sleep(0.1)
+                    finally:
+                        stream.stop()
+                        stream.close()
+                    break
+                except Exception:
+                    continue
+
+            if not opened:
+                print("[Assistant] Could not open any microphone. Running without mic.")
                 while not self._shutdown_requested.is_set():
-                    await asyncio.sleep(0.1)
+                    await asyncio.sleep(1)
         except Exception as e:
-            print(f"[Assistant] ❌ Mic: {e}")
-            raise
+            print(f"[Assistant] Mic error: {e}")
+            while not self._shutdown_requested.is_set():
+                await asyncio.sleep(1)
 
     async def _receive_audio(self):
         print("[Assistant] 👂 Recv started")
