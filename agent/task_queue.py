@@ -151,7 +151,7 @@ class TaskQueue:
             self._queue.sort(key=lambda item: (item.priority, item.created_at))
             self._tasks[task_id] = task
             self._condition.notify()
-        print(f"[TaskQueue] 📥 {kind} job queued: [{task_id}] {goal[:60]}")
+        print(f"[TaskQueue] [IN] {kind} job queued: [{task_id}] {goal[:60]}")
         return task_id
 
     def cancel(self, task_id: str) -> bool:

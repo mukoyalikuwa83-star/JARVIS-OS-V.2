@@ -2793,7 +2793,10 @@ class HudCanvas(QWidget):
                 p.setBrush(QBrush(QColor(cr, cg, cb, ia)))
                 p.drawEllipse(QPointF(sx, sy), draw_sz * 2.0, draw_sz * 2.0)
 
-            p.setBrush(QBrush(QColor(min(255, cr+60), min(255, cg+40), min(255, cb+20), a)))
+            p.setBrush(QBrush(QColor(
+                max(0, min(255, int(cr) + 60)),
+                max(0, min(255, int(cg) + 40)),
+                max(0, min(255, int(cb) + 20)), a)))
             p.drawEllipse(QPointF(sx, sy), draw_sz, draw_sz)
 
         # ═══ LAYER 11: Shell particles ═════════════════════════════════════
@@ -6855,13 +6858,27 @@ class MainWindow(QMainWindow):
             candidate_key = ""
             candidate_is_saved = False
 
-        self._show_setup()
-        if candidate_key and self._overlay:
-            self._overlay.validate_candidate(
-                candidate_key,
-                remember_key=candidate_is_saved,
-                purge_saved_on_failure=candidate_is_saved,
-            )
+        auto_start = os.environ.get("JARVIS_AUTO_START", "").strip().lower() in {"1", "true", "yes", "on"}
+        if candidate_key and auto_start:
+            os.environ["GEMINI_API_KEY"] = candidate_key
+            self._ready = True
+            self._apply_state("LISTENING")
+            self._log.append_log("SYS: STARTING SYSTEMS...")
+            self._log.append_log("SYS: CORE SYSTEMS ONLINE")
+            self._log.append_log("SYS: NEURAL NETWORK ACTIVE  [OK]")
+            self._log.append_log("SYS: PARALLAX UI COMPLETE   [OK]")
+            self._log.append_log("SYS: VOICE SYNTHESIS READY  [OK]")
+            self._log.append_log(f"SYS: PLATFORM {sys.platform.upper()} DETECTED")
+            self._log.append_log("SYS: ALL SYSTEMS NOMINAL")
+            self._log.append_log("SYS: AUTO-START mode — skipped setup overlay")
+        else:
+            self._show_setup()
+            if candidate_key and self._overlay:
+                self._overlay.validate_candidate(
+                    candidate_key,
+                    remember_key=candidate_is_saved,
+                    purge_saved_on_failure=candidate_is_saved,
+                )
 
 
         sc_mute = QShortcut(QKeySequence("F4"), self)

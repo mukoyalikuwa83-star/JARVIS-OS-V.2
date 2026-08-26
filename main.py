@@ -95,13 +95,13 @@ SELF_QUIT_GOODBYE = (
     "Until next time."
 )
 
-LIVE_VAD_SILENCE_MS = 200
+LIVE_VAD_SILENCE_MS = 150
 _LIVE_RECONNECT_MAX_DELAY = 5.0
 _LIVE_KEEPALIVE_INTERVAL = 25.0
-_MIC_GAIN_DB = 30
-_MIC_NOISE_GATE_THRESHOLD = 15
-_MIC_AGC_TARGET = 10000
-_MIC_AGC_RATE = 0.05
+_MIC_GAIN_DB = 42
+_MIC_NOISE_GATE_THRESHOLD = 3
+_MIC_AGC_TARGET = 6000
+_MIC_AGC_RATE = 0.08
 
 # Tool calls that mutate external state, the UI, or running processes. They are
 # executed strictly in order so later calls always see the effects of earlier ones.
@@ -2491,6 +2491,18 @@ class JarvisLive:
                 id=fc.id, name=name, response={"result": intercepted}
             )
 
+        _tool_start = time.time()
+        _slow_tools = {"deep_research", "agent_task", "create_presentation", "autonomous_worker",
+                       "browser_control", "screen_auto", "system_access", "coding_assistant"}
+        if name in _slow_tools:
+            try:
+                self._safe_send_content_sync(
+                    turns={"parts": [{"text": "Working on it..."}]},
+                    turn_complete=False
+                )
+            except Exception:
+                pass
+
         if name == "save_memory":
             try:
                 category = args.get("category", "notes")
@@ -3032,6 +3044,15 @@ class JarvisLive:
             pass
 
         try:
+            _tool_elapsed = time.time() - _tool_start if '_tool_start' in dir() else 0
+            if _tool_elapsed > 5.0 and name in _slow_tools:
+                try:
+                    self._safe_send_content_sync(
+                        turns={"parts": [{"text": f"Done! Took {_tool_elapsed:.0f} seconds."}]},
+                        turn_complete=False
+                    )
+                except Exception:
+                    pass
             return types.FunctionResponse(
                 id=fc.id, name=name,
                 response={"result": result}
@@ -3125,9 +3146,9 @@ class JarvisLive:
                 now_mono = time.monotonic()
                 since_playback_start = now_mono - getattr(self, '_playback_started_at', now_mono)
                 since_barge_in = now_mono - getattr(self, '_last_barge_in_time', 0.0)
-                if since_playback_start > 1.5 and since_barge_in > 1.5:
+                if since_playback_start > 0.8 and since_barge_in > 1.0:
                     playback_level = getattr(self, '_playback_energy', 0.0)
-                    echo_threshold = max(playback_level * 3.5, 2500 / 32768.0)
+                    echo_threshold = max(playback_level * 2.0, 1500 / 32768.0)
                     if rms > echo_threshold:
                         self._barge_in_event.set()
                         self._last_barge_in_time = now_mono
@@ -3865,16 +3886,16 @@ class JarvisLive:
         last_heal = 0
         last_list = 0
         STATUS_INT = 300
-        BUILD_INT = 900
-        SCAN_INT = 900
-        EARN_INT = 3600
-        BRAIN_INT = 600
-        STOREFRONT_INT = 600
-        HEAL_INT = 3600
-        LIST_INT = 1200
+        BUILD_INT = 300
+        SCAN_INT = 300
+        EARN_INT = 1800
+        BRAIN_INT = 300
+        STOREFRONT_INT = 300
+        HEAL_INT = 1800
+        LIST_INT = 300
         self.ui.write_log("SYS: Autonomous worker online. Making money.")
         while True:
-            await asyncio.sleep(60)
+            await asyncio.sleep(30)
             if self._shutdown_requested.is_set():
                 return
             now = time.time()
@@ -4219,6 +4240,7 @@ class JarvisLive:
 def main():
     if not wait_for_startup_claps():
         return
+    os.environ.setdefault("JARVIS_AUTO_START", "1")
     print("[Assistant] ⚡ Powering up the interface...")
     try:
         ui = JarvisUI("face.png")

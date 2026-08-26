@@ -1827,13 +1827,13 @@ def send_message(
     message_text = _with_jarvis_footer(message_text)
     duplicate = _check_duplicate_send(platform, receiver, message_text)
     if duplicate:
-        print(f"[SendMessage] ⏭️ {duplicate}")
+        print(f"[SendMessage] [SKIP] {duplicate}")
         if player:
             player.write_log(f"[msg] {duplicate}")
         return duplicate
 
     preview = message_text[:50] + ("…" if len(message_text) > 50 else "")
-    print(f"[SendMessage] 📨 {platform} → {receiver}: {preview}")
+    print(f"[SendMessage] [OUT] {platform} -> {receiver}: {preview}")
     if player:
         player.write_log(f"[msg] {platform} → {receiver}")
 

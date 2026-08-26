@@ -297,12 +297,12 @@ def create_plan(goal: str, context: str = "") -> dict:
         print(f"[Planner] ⚠️ JSON parse failed: {e}")
         return _fallback_plan(goal)
     except Exception as e:
-        print(f"[Planner] ⚠️ Planning failed: {e}")
+        print(f"[Planner] [WARN] Planning failed: {e}")
         return _fallback_plan(goal)
 
 
 def _fallback_plan(goal: str) -> dict:
-    print("[Planner] 🔄 Fallback plan")
+    print("[Planner] [INFO] Fallback plan")
     if re.search(r"\b(email|emails|e-mail|inbox)\b", goal, re.I):
         action = "inbox"
         parameters = {"action": action, "limit": 10}
