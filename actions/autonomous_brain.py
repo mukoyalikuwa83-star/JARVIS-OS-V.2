@@ -98,6 +98,7 @@ def handle(parameters: dict) -> str:
         "start_day": _start_day,
         "end_day": _end_day,
         "run_cycle": _run_cycle,
+        "run_full_cycle": _run_full_cycle,
         "get_agents": _get_agents,
         "spawn_agent": lambda: _spawn_agent(target, value),
         "kill_agent": lambda: _kill_agent(target),
@@ -231,6 +232,82 @@ def _end_day() -> str:
     lines.append("Brain entering low-power monitoring mode.")
 
     return "\n".join(lines)
+
+
+def _run_full_cycle() -> str:
+    """Run a full autonomous cycle: build products, find jobs, apply, deploy store, track earnings."""
+    results = []
+    results.append("=== FULL AUTONOMOUS CYCLE ===")
+
+    try:
+        from actions.autonomous_worker import AutonomousWorker
+        aw = AutonomousWorker()
+
+        # 1. Build a product
+        import random
+        product_types = ["flask_api", "web_dashboard", "cli_tool", "etl_pipeline",
+                         "saas_template", "discord_bot", "telegram_bot", "automation_script",
+                         "chrome_extension", "landing_page", "api_integration", "data_pipeline"]
+        descriptions = [
+            "E-commerce API with auth, payments, inventory",
+            "Analytics dashboard with real-time charts",
+            "DevOps CLI with deployment automation",
+            "Data pipeline with ETL and monitoring",
+            "SaaS template with billing and auth",
+            "Discord bot with moderation and economy",
+            "Telegram bot with notifications and scheduling",
+            "Automation script for file management",
+            "Chrome extension for productivity",
+            "Landing page with pricing and testimonials",
+            "Multi-API integration with caching",
+            "Streaming data pipeline with alerts",
+        ]
+        wt = random.choice(product_types)
+        desc = random.choice(descriptions)
+        build_result = aw.do_work(wt, desc)
+        results.append(f"[WORKER] Built {wt}: {build_result[:80]}")
+
+        # 2. Find jobs on active platforms
+        status = aw.get_status()
+        if "freelancer" in status.lower():
+            job_result = aw.find_jobs("freelancer", "python")
+            results.append(f"[WORKER] Jobs: {job_result[:80]}")
+
+        # 3. Deploy store
+        deploy_result = aw.deploy()
+        results.append(f"[WORKER] Deploy: {deploy_result.split(chr(10))[0][:60]}")
+
+        # 4. Check pending approvals
+        pending = aw.get_pending()
+        if "No pending" not in pending:
+            results.append(f"[WORKER] Pending: {pending[:60]}")
+
+        # 5. Earnings report
+        earnings = aw.earnings()
+        results.append(f"[WORKER] {earnings.split(chr(10))[1][:60] if chr(10) in earnings else earnings[:60]}")
+
+    except Exception as e:
+        results.append(f"[WORKER] Error: {e}")
+
+    # 6. Update brain state
+    state = _load_json(_BRAIN_STATE, {})
+    state["cycle_count"] = state.get("cycle_count", 0) + 1
+    state["last_cycle"] = _now()
+    state["status"] = "active"
+    state["tasks_completed"] = state.get("tasks_completed", 0) + 1
+    try:
+        from actions.autonomous_worker import AutonomousWorker as _AW
+        _w = _AW()
+        state["money_earned"] = _w._wallet.get("earned", 0)
+    except Exception:
+        pass
+    _save_json(_BRAIN_STATE, state)
+
+    # 7. Log the cycle
+    _log_task(f"cycle_{state['cycle_count']}", "brain", "run_full_cycle", "; ".join(results))
+
+    results.append(f"\nCycle {state['cycle_count']} complete.")
+    return "\n".join(results)
 
 
 def _run_cycle() -> str:

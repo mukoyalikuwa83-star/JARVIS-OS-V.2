@@ -962,8 +962,8 @@ class AutonomousWorker:
             return "No pending approvals."
         lines = []
         for p in pending:
-            lines.append(f"  [{p['id']}] {p['platform']}: {p['description']}")
-            lines.append(f"    Action: {p['action_needed']}")
+            lines.append(f"  [{p.get('id', '?')}] {p.get('platform', '?')}: {p.get('description', p.get('action_needed', ''))}")
+            lines.append(f"    Action: {p.get('action_needed', '?')}")
         return f"Pending approvals ({len(pending)}):\n" + "\n".join(lines)
 
     def browser_tabs(self, filter_domain=""):
@@ -1362,9 +1362,9 @@ body{{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e
             zf.write(store_path, "index.html")
         catalog_json = deploy_dir / "catalog.json"
         catalog_json.write_text(json.dumps([{
-            "id": c["id"], "title": c["listing"]["title"],
-            "price": c["listing"]["price"],
-            "description": c["listing"]["description"],
+            "id": c["id"], "title": c["listing"].get("title", "Product"),
+            "price": c["listing"].get("price", 49),
+            "description": c["listing"].get("description", ""),
         } for c in catalog], indent=2), encoding="utf-8")
         try:
             url = self._start_tunnel()

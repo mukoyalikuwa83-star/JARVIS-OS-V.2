@@ -3901,24 +3901,10 @@ class JarvisLive:
                 pass
 
     async def _money_making_loop(self):
-        """Autonomous money loop. JARVIS works alone - never stops."""
+        """Autonomous money loop. JARVIS manages all agents, builds products, finds jobs, applies."""
         import random
-        last_status = 0
-        last_build = 0
-        last_scan = 0
-        last_earn = 0
-        last_brain = 0
-        last_storefront = 0
-        last_heal = 0
-        last_list = 0
-        STATUS_INT = 300
-        BUILD_INT = 300
-        SCAN_INT = 300
-        EARN_INT = 1800
-        BRAIN_INT = 300
-        STOREFRONT_INT = 300
-        HEAL_INT = 1800
-        LIST_INT = 300
+        last_full_cycle = 0
+        FULL_CYCLE_INT = 300
         self.ui.write_log("SYS: Autonomous worker online. Making money.")
         while True:
             await asyncio.sleep(30)
@@ -3927,182 +3913,18 @@ class JarvisLive:
             now = time.time()
             try:
                 loop = asyncio.get_event_loop()
-                from actions.autonomous_worker import AutonomousWorker
-                aw = AutonomousWorker()
 
-                # BRAIN CYCLE - think and plan
-                if now - last_brain > BRAIN_INT:
-                    last_brain = now
+                # Run full brain+worker cycle every 5 minutes
+                if now - last_full_cycle > FULL_CYCLE_INT:
+                    last_full_cycle = now
                     try:
                         from actions.autonomous_brain import handle as bh
-                        await loop.run_in_executor(None, lambda: bh({"action": "run_cycle"}))
+                        result = await loop.run_in_executor(None, lambda: bh({"action": "run_full_cycle"}))
+                        lines = [l for l in result.split("\n") if l.strip() and not l.startswith("=")]
+                        if lines:
+                            self.ui.write_log(f"SYS: {lines[0][:70]}")
                     except Exception as e:
-                        print(f"[Worker] Brain cycle error: {e}")
-
-                # STATUS REPORT
-                if now - last_status > STATUS_INT:
-                    last_status = now
-                    try:
-                        status_text = await loop.run_in_executor(None, lambda: aw.handle({"action": "status"}))
-                        self.ui.write_log(f"SYS: {status_text.split(chr(10))[1][:60]}")
-                    except Exception as e:
-                        print(f"[Worker] Status error: {e}")
-
-                # BUILD PRODUCTS
-                if now - last_build > BUILD_INT:
-                    last_build = now
-                    try:
-                        wts = ["flask_api", "web_dashboard", "cli_tool", "etl_pipeline", "saas_template",
-                               "python_script", "web_scraper", "discord_bot", "telegram_bot", "automation_script"]
-                        wt = random.choice(wts)
-                        descs = {
-                            "flask_api": random.choice([
-                                "E-commerce API with products, cart, orders, payment integration",
-                                "Blog API with posts, comments, tags, user roles, search",
-                                "Chat API with rooms, messages, typing indicators, presence",
-                                "Task manager API with projects, tasks, deadlines, notifications",
-                                "File sharing API with upload, download, sharing, permissions",
-                                "Weather API with forecasts, alerts, historical data",
-                            ]),
-                            "web_dashboard": random.choice([
-                                "CRM dashboard with contacts, deals, pipeline, reporting",
-                                "Marketing analytics dashboard with campaigns, metrics, funnels",
-                                "Inventory management dashboard with stock, orders, alerts",
-                                "HR dashboard with employees, time-off, reviews, org chart",
-                                "Finance dashboard with transactions, charts, budgeting",
-                                "Social media analytics dashboard with followers, engagement",
-                            ]),
-                            "cli_tool": random.choice([
-                                "Git workflow CLI with branching, merging, release management",
-                                "Docker management CLI with containers, images, compose",
-                                "Database migration CLI with schemas, seeds, rollback",
-                                "API testing CLI with requests, assertions, reports",
-                                "CSV processor CLI with filter, transform, merge, validate",
-                                "Log analyzer CLI with search, filter, alert, export",
-                            ]),
-                            "etl_pipeline": random.choice([
-                                "Analytics pipeline with events, aggregation, dashboards",
-                                "Log pipeline with parsing, filtering, alerting",
-                                "Inventory sync pipeline with suppliers, stock, pricing",
-                                "User data pipeline with profiles, activity, segmentation",
-                                "RSS feed pipeline with fetch, parse, categorize, store",
-                                "Email pipeline with parse, extract, categorize, respond",
-                            ]),
-                            "saas_template": random.choice([
-                                "Invoice generator SaaS with templates, clients, payments",
-                                "Booking system SaaS with calendars, appointments, reminders",
-                                "Form builder SaaS with drag-drop, submissions, webhooks",
-                                "Newsletter SaaS with subscribers, campaigns, analytics",
-                                "URL shortener SaaS with analytics, QR codes, custom domains",
-                                "Paste bin SaaS with syntax highlighting, expiration, API",
-                            ]),
-                            "python_script": random.choice([
-                                "Python utility: file ops, data processing, CLI tools",
-                                "Python web scraper: multi-site, proxy, export JSON/CSV",
-                                "Python automation: email sender, file organizer, backup",
-                                "Python data analyzer: CSV/Excel processing, charts, reports",
-                            ]),
-                            "web_scraper": random.choice([
-                                "Multi-site scraper with proxy support and JSON export",
-                                "Real estate scraper with listings, prices, photos, maps",
-                                "Job board scraper with filters, alerts, CSV export",
-                                "Price comparison scraper with tracking, alerts, history",
-                            ]),
-                            "discord_bot": random.choice([
-                                "Discord bot: moderation, music, AI chat, economy",
-                                "Discord bot: ticketing, reactions, embeds, logging",
-                                "Discord bot: gaming,leaderboards, matchmaking, stats",
-                            ]),
-                            "telegram_bot": random.choice([
-                                "Telegram bot: admin tools, moderation, anti-spam",
-                                "Telegram bot: RSS feeds, news, notifications, reminders",
-                                "Telegram bot: crypto prices, alerts, portfolio tracking",
-                            ]),
-                            "automation_script": random.choice([
-                                "Batch file renamer with regex, preview, undo support",
-                                "Auto-backup system with scheduling, compression, cloud sync",
-                                "Screenshot taker with timer, annotations, upload",
-                                "System monitor with alerts, logging, dashboard",
-                            ]),
-                        }
-                        result = await loop.run_in_executor(
-                            None, lambda: aw.handle({"action": "work", "target": wt, "value": descs.get(wt, "Project")})
-                        )
-                        self.ui.write_log(f"SYS: Built: {result[:80]}")
-                    except Exception as e:
-                        print(f"[Worker] Build error: {e}")
-
-                # LIST PRODUCTS on store
-                if now - last_list > LIST_INT:
-                    last_list = now
-                    try:
-                        await loop.run_in_executor(None, lambda: aw.handle({"action": "redeploy"}))
-                    except Exception as e:
-                        print(f"[Worker] List error: {e}")
-
-                # FIND JOBS on active platforms
-                try:
-                    status_text = await loop.run_in_executor(None, lambda: aw.handle({"action": "status"}))
-                    has_active = "Active platforms: none" not in status_text
-                except Exception:
-                    has_active = False
-
-                if has_active:
-                    if now - last_scan > SCAN_INT:
-                        last_scan = now
-                        try:
-                            for line in status_text.split("\n"):
-                                if "Active platforms:" in line:
-                                    active = [p.strip() for p in line.split(":", 1)[1].split(",") if p.strip() and p.strip() != "none"]
-                                    for plat in active[:3]:
-                                        try:
-                                            # Search for jobs
-                                            result = await loop.run_in_executor(
-                                                None, lambda p=plat: aw.handle({"action": "find_jobs", "target": p, "value": "python"})
-                                            )
-                                            self.ui.write_log(f"SYS: {plat}: {result[:60]}")
-                                            # Also try to build a product to sell on that platform
-                                            try:
-                                                build_result = await loop.run_in_executor(
-                                                    None, lambda: aw.handle({"action": "work", "target": "flask_api", "value": f"Professional {plat} gig: custom automation tool"})
-                                                )
-                                                self.ui.write_log(f"SYS: Built gig product: {build_result[:50]}")
-                                            except Exception:
-                                                pass
-                                        except Exception as e:
-                                            print(f"[Worker] Job search error for {plat}: {e}")
-                        except Exception as e:
-                            print(f"[Worker] Scan error: {e}")
-                else:
-                    # No active platforms — deploy store and try to activate
-                    if now - last_storefront > STOREFRONT_INT:
-                        last_storefront = now
-                        try:
-                            deploy_result = await loop.run_in_executor(
-                                None, lambda: aw.handle({"action": "deploy"})
-                            )
-                            self.ui.write_log(f"SYS: Deploy: {deploy_result.split(chr(10))[0][:70]}")
-                        except Exception as e:
-                            print(f"[Worker] Deploy error: {e}")
-
-                # EARNINGS REPORT
-                if now - last_earn > EARN_INT:
-                    last_earn = now
-                    try:
-                        earnings = await loop.run_in_executor(None, lambda: aw.handle({"action": "earnings"}))
-                        self.ui.write_log(f"SYS: {earnings.split(chr(10))[1][:60]}")
-                    except Exception as e:
-                        print(f"[Worker] Earnings error: {e}")
-
-                # SELF-HEAL
-                if now - last_heal > HEAL_INT:
-                    last_heal = now
-                    try:
-                        heal_result = await loop.run_in_executor(None, lambda: aw.handle({"action": "heal"}))
-                        if "FIXED" in heal_result:
-                            self.ui.write_log(f"SYS: Self-heal: {heal_result.split('FIXED')[1][:60]}")
-                    except Exception as e:
-                        print(f"[Worker] Heal error: {e}")
+                        print(f"[Worker] Full cycle error: {e}")
 
             except Exception as e:
                 self.ui.write_log(f"SYS: Worker loop error: {str(e)[:60]}")
