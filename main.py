@@ -98,7 +98,7 @@ SELF_QUIT_GOODBYE = (
 LIVE_VAD_SILENCE_MS = 150
 _LIVE_RECONNECT_MAX_DELAY = 5.0
 _LIVE_KEEPALIVE_INTERVAL = 25.0
-_MIC_GAIN_DB = 42
+_MIC_GAIN_DB = 56
 _MIC_NOISE_GATE_THRESHOLD = 3
 _MIC_AGC_TARGET = 6000
 _MIC_AGC_RATE = 0.08
@@ -3151,7 +3151,7 @@ class JarvisLive:
                         if test_audio:
                             all_audio = np.concatenate(test_audio)
                             rms = float(np.sqrt(np.mean(all_audio.astype(np.float32) ** 2)))
-                            if rms > 100:
+                            if rms > 5:
                                 working_device = idx
                                 print(f"[Assistant] Mic found: device {idx} ({dev['name']}) rms={rms:.1f}")
                                 break
