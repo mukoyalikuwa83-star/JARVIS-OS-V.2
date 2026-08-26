@@ -1,9 +1,21 @@
 [
   {
+    "id": "177a9c14",
+    "title": "SaaS Template - Newsletter SaaS",
+    "price": 149,
+    "description": "Newsletter SaaS with subscribers. Complete SaaS starter with landing page, user auth, dashboard, API keys, plan-based rate limiting. Stripe-ready."
+  },
+  {
     "id": "2bef358b",
     "title": "SaaS Template - Invoice generator SaaS",
     "price": 149,
     "description": "Invoice generator SaaS with templates. Complete SaaS starter with landing page, user auth, dashboard, API keys, plan-based rate limiting. Stripe-ready."
+  },
+  {
+    "id": "89b437f7",
+    "title": "SaaS Template - Full-Stack SaaS",
+    "price": 149,
+    "description": "Full-Stack SaaS with Auth, Billing, Dashboard, API. Complete SaaS starter with landing page, user auth, dashboard, API keys, plan-based rate limiting. Stripe-ready."
   },
   {
     "id": "98491b0c",
@@ -12,10 +24,196 @@
     "description": "Booking system SaaS with calendars. Complete SaaS starter with landing page, user auth, dashboard, API keys, plan-based rate limiting. Stripe-ready."
   },
   {
+    "id": "055a4183",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "0591cdfa",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "0604855a",
+    "title": "Python Tool - Professional automation suite - production quality",
+    "price": 99,
+    "description": "Professional automation suite - production quality. Complete automation toolkit: file management, system monitoring, task scheduling. Cross-platform."
+  },
+  {
+    "id": "06e41e4c",
+    "title": "Flask REST API - REST API",
+    "price": 99,
+    "description": "REST API with JWT Auth, Rate Limiting, CRUD, Tests. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "09d7c5ff",
+    "title": "Discord Bot - Discord Bot",
+    "price": 99,
+    "description": "Discord Bot with Moderation, Economy, Music, AI Chat. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "0ef7a5c2",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "1274a2c8",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "1982cf50",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "1ab6d8f8",
+    "title": "Discord Bot - Discord bot: ticketing",
+    "price": 99,
+    "description": "Discord bot: ticketing. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "1b4f2a2e",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "1e708ea6",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "2210438a",
+    "title": "Flask REST API - File sharing API",
+    "price": 99,
+    "description": "File sharing API with upload. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "24c8cc52",
+    "title": "Flask REST API - Blog API",
+    "price": 99,
+    "description": "Blog API with posts. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "27aed08b",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "28aeaf55",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "2950621c",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "2a92ca37",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "2ac9e77d",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "2b0b675a",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "2c3c28f0",
+    "title": "Flask REST API - E-commerce API",
+    "price": 99,
+    "description": "E-commerce API with auth and payments. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "2f8d944a",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "34917e43",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "368b4b8b",
+    "title": "Flask REST API - Blog API",
+    "price": 99,
+    "description": "Blog API with posts. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "383b324f",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "3ab16964",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
     "id": "3bca522e",
     "title": "Flask REST API - Flask REST API",
     "price": 99,
     "description": "Flask REST API with auth, CRUD, rate limiting, tests. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "3e6f8272",
+    "title": "Discord Bot - Discord bot: ticketing",
+    "price": 99,
+    "description": "Discord bot: ticketing. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "44790023",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "4666db6d",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "4983852f",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "4a769f07",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "5b7251d4",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
   },
   {
     "id": "5fafd058",
@@ -24,10 +222,46 @@
     "description": "Freelancer gig: custom API. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
   },
   {
+    "id": "60016928",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "62093ec5",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "635d057e",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "697f0b61",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
     "id": "70802576",
     "title": "Flask REST API - Chat API",
     "price": 99,
     "description": "Chat API with rooms. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "75580776",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "79222aeb",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
   },
   {
     "id": "7eba14c4",
@@ -36,10 +270,136 @@
     "description": "Discord bot: moderation. Production-quality code. Ready to use, well documented, MIT licensed."
   },
   {
+    "id": "847152f8",
+    "title": "Flask REST API - Chat API",
+    "price": 99,
+    "description": "Chat API with rooms. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "86a53674",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "888f48f3",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "8a5d516f",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "8b5919f3",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "8d1b335e",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "8d94ae11",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "92922505",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "94ad7174",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "9bf33389",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "a057bbd3",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "a48910ff",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "a7e78458",
+    "title": "Python Tool - File Manager, System Monitor, Task Scheduler",
+    "price": 99,
+    "description": "File Manager, System Monitor, Task Scheduler. Complete automation toolkit: file management, system monitoring, task scheduling. Cross-platform."
+  },
+  {
+    "id": "a844234e",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "aa58464f",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "ab314278",
+    "title": "Flask REST API - E-commerce API",
+    "price": 99,
+    "description": "E-commerce API with products. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "b2804ad0",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "b2c39036",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "b5cf3b86",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "b9c9a164",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
     "id": "bba6a84a",
     "title": "Flask REST API - Freelancer gig: custom API",
     "price": 99,
     "description": "Freelancer gig: custom API. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "bbe06aa6",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
   },
   {
     "id": "ca1955e1",
@@ -48,10 +408,106 @@
     "description": "E-commerce API with products. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
   },
   {
+    "id": "cecf48e5",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "d469ea78",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "d6ace06a",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "e4316cbe",
+    "title": "Discord Bot - Discord bot: ticketing",
+    "price": 99,
+    "description": "Discord bot: ticketing. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "e825e073",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
     "id": "e89466b8",
     "title": "Discord Bot - Discord bot: moderation, music, economy, AI chat",
     "price": 99,
     "description": "Discord bot: moderation, music, economy, AI chat. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "eb8bbe9b",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "ebf6f7f1",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "ec4e1cd0",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "ecee9cb9",
+    "title": "Flask REST API - File sharing API",
+    "price": 99,
+    "description": "File sharing API with upload. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "f349ae41",
+    "title": "Flask REST API - Professional freelancer gig: custom automation too",
+    "price": 99,
+    "description": "Professional freelancer gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "f36877ef",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "fcdf1457",
+    "title": "Flask REST API - Professional gumroad gig: custom automation tool",
+    "price": 99,
+    "description": "Professional gumroad gig: custom automation tool. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "ff3a2022",
+    "title": "Flask REST API - Task manager API",
+    "price": 99,
+    "description": "Task manager API with projects. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "11ca702c",
+    "title": "Python Tool - Professional api integration - production quality",
+    "price": 89,
+    "description": "Professional api integration - production quality. Multi-API client with auth, rate limiting, caching, retries, bulk operations. Zero dependencies."
+  },
+  {
+    "id": "17ebabd3",
+    "title": "Web Dashboard - Admin Dashboard",
+    "price": 89,
+    "description": "Admin Dashboard with Charts, Tables, Dark Theme. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize."
+  },
+  {
+    "id": "3144ea01",
+    "title": "Telegram Bot - Telegram bot: RSS feeds",
+    "price": 89,
+    "description": "Telegram bot: RSS feeds. Production-quality code. Ready to use, well documented, MIT licensed."
   },
   {
     "id": "64de8362",
@@ -60,10 +516,28 @@
     "description": "CRM dashboard with contacts. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize."
   },
   {
+    "id": "71285b6b",
+    "title": "Web Dashboard - HR dashboard",
+    "price": 89,
+    "description": "HR dashboard with employees. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize."
+  },
+  {
+    "id": "8bc9e2ba",
+    "title": "Python Tool - Multi-API Client",
+    "price": 89,
+    "description": "Multi-API Client with Auth, Caching, Rate Limiting. Multi-API client with auth, rate limiting, caching, retries, bulk operations. Zero dependencies."
+  },
+  {
     "id": "a802da6f",
     "title": "Web Dashboard - Marketing analytics dashboard",
     "price": 89,
     "description": "Marketing analytics dashboard with campaigns. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize."
+  },
+  {
+    "id": "c1e6be18",
+    "title": "Telegram Bot - Telegram bot: admin tools",
+    "price": 89,
+    "description": "Telegram bot: admin tools. Production-quality code. Ready to use, well documented, MIT licensed."
   },
   {
     "id": "c4afa56e",
@@ -78,10 +552,52 @@
     "description": "HR dashboard with employees. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize."
   },
   {
+    "id": "c7d6657e",
+    "title": "Python Tool - Streaming Data Pipeline",
+    "price": 89,
+    "description": "Streaming Data Pipeline with Parallel Processing. Streaming data pipeline with Source/Transform/Sink architecture, parallel processing, monitoring."
+  },
+  {
+    "id": "d32ac379",
+    "title": "Python Tool - Professional data pipeline - production quality",
+    "price": 89,
+    "description": "Professional data pipeline - production quality. Streaming data pipeline with Source/Transform/Sink architecture, parallel processing, monitoring."
+  },
+  {
+    "id": "d96ccbae",
+    "title": "Telegram Bot - Telegram bot: RSS feeds",
+    "price": 89,
+    "description": "Telegram bot: RSS feeds. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "ef5567fe",
+    "title": "Web Dashboard - CRM dashboard",
+    "price": 89,
+    "description": "CRM dashboard with contacts. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize."
+  },
+  {
+    "id": "f9e6c084",
+    "title": "Web Dashboard - Finance dashboard",
+    "price": 89,
+    "description": "Finance dashboard with transactions. Full-stack web dashboard with responsive dark UI, interactive charts, sortable data tables, CSV export. Ready to customize."
+  },
+  {
     "id": "111bc230",
     "title": "ETL Pipeline - ETL pipeline",
     "price": 79,
     "description": "ETL pipeline with extract, transform, load, retry. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven."
+  },
+  {
+    "id": "16ccd2c4",
+    "title": "ETL Pipeline - Log pipeline",
+    "price": 79,
+    "description": "Log pipeline with parsing. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven."
+  },
+  {
+    "id": "2beac04f",
+    "title": "Python Tool - Professional chrome extension - production quality",
+    "price": 79,
+    "description": "Professional chrome extension - production quality. Chrome extension (Manifest V3) with popup UI, background service worker, content scripts, storage API."
   },
   {
     "id": "37a3284a",
@@ -90,16 +606,76 @@
     "description": "Analytics pipeline with events. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven."
   },
   {
+    "id": "3a84039b",
+    "title": "ETL Pipeline - Production ETL",
+    "price": 79,
+    "description": "Production ETL with CSV/JSON/JSONL, Transforms, Monitoring. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven."
+  },
+  {
+    "id": "3b41e612",
+    "title": "ETL Pipeline - Log pipeline",
+    "price": 79,
+    "description": "Log pipeline with parsing. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven."
+  },
+  {
+    "id": "ade2b779",
+    "title": "Web Scraper - Job board scraper",
+    "price": 79,
+    "description": "Job board scraper with filters. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
     "id": "b389b458",
     "title": "ETL Pipeline - Log pipeline",
     "price": 79,
     "description": "Log pipeline with parsing. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven."
   },
   {
+    "id": "b3c65d06",
+    "title": "Python Tool - Chrome Extension",
+    "price": 79,
+    "description": "Chrome Extension with Popup, Background Worker, Storage. Chrome extension (Manifest V3) with popup UI, background service worker, content scripts, storage API."
+  },
+  {
+    "id": "c8452af7",
+    "title": "Web Scraper - Job board scraper",
+    "price": 79,
+    "description": "Job board scraper with filters. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "d1d75ebb",
+    "title": "ETL Pipeline - Log pipeline",
+    "price": 79,
+    "description": "Log pipeline with parsing. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven."
+  },
+  {
+    "id": "f76e3135",
+    "title": "Web Scraper - Job board scraper",
+    "price": 79,
+    "description": "Job board scraper with filters. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
     "id": "ff30e953",
     "title": "ETL Pipeline - ETL pipeline",
     "price": 79,
     "description": "ETL pipeline with extract, transform, load, retry. Production ETL pipeline supporting CSV/JSON/JSONL, chained transforms, dedup, rate limiting. Config-driven."
+  },
+  {
+    "id": "02393989",
+    "title": "Python Tool - Professional landing page - production quality",
+    "price": 69,
+    "description": "Professional landing page - production quality. Professional landing page with hero, features grid, pricing cards, testimonials, dark theme. Single HTML, no build step."
+  },
+  {
+    "id": "95431b1a",
+    "title": "Python Tool - SaaS Landing Page",
+    "price": 69,
+    "description": "SaaS Landing Page with Pricing, Testimonials, CTA. Professional landing page with hero, features grid, pricing cards, testimonials, dark theme. Single HTML, no build step."
+  },
+  {
+    "id": "02d64c0d",
+    "title": "CLI Tool - API testing CLI",
+    "price": 59,
+    "description": "API testing CLI with requests. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies."
   },
   {
     "id": "10aaaf06",
@@ -114,6 +690,12 @@
     "description": "Windows automation: file org, monitoring, scheduling. Production-quality code. Ready to use, well documented, MIT licensed."
   },
   {
+    "id": "25a071eb",
+    "title": "Automation Script - System monitor",
+    "price": 59,
+    "description": "System monitor with alerts. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
     "id": "2882e950",
     "title": "CLI Tool - Full CLI tool",
     "price": 59,
@@ -124,6 +706,12 @@
     "title": "CLI Tool - API testing CLI",
     "price": 59,
     "description": "API testing CLI with requests. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies."
+  },
+  {
+    "id": "6941da98",
+    "title": "CLI Tool - Git workflow CLI",
+    "price": 59,
+    "description": "Git workflow CLI with branching. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies."
   },
   {
     "id": "736a4093",
@@ -138,10 +726,52 @@
     "description": "Git workflow CLI with branching. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies."
   },
   {
+    "id": "aa3e0b3f",
+    "title": "CLI Tool - Docker management CLI",
+    "price": 59,
+    "description": "Docker management CLI with containers. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies."
+  },
+  {
     "id": "bc54a4f1",
     "title": "Automation Script - Windows automation: file org, monitoring, scheduli",
     "price": 59,
     "description": "Windows automation: file org, monitoring, scheduling. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "f14d0e15",
+    "title": "CLI Tool - Docker management CLI",
+    "price": 59,
+    "description": "Docker management CLI with containers. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies."
+  },
+  {
+    "id": "f91fa764",
+    "title": "Automation Script - System monitor",
+    "price": 59,
+    "description": "System monitor with alerts. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "0f9fcfda",
+    "title": "Python Tool - python_developer",
+    "price": 49,
+    "description": "python_developer for upwork. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "0faa0f30",
+    "title": "Product 0faa0f30",
+    "price": 49,
+    "description": "Production code"
+  },
+  {
+    "id": "23815629",
+    "title": "Product 23815629",
+    "price": 49,
+    "description": "Production code"
+  },
+  {
+    "id": "38ba227f",
+    "title": "Python Tool - Python web scraper: multi-site",
+    "price": 49,
+    "description": "Python web scraper: multi-site. Production-quality code. Ready to use, well documented, MIT licensed."
   },
   {
     "id": "39d8404a",
@@ -154,5 +784,65 @@
     "title": "Python Tool - Python utility: file ops",
     "price": 49,
     "description": "Python utility: file ops. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "6f115621",
+    "title": "Python Tool - Python utility: file ops",
+    "price": 49,
+    "description": "Python utility: file ops. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "745c2880",
+    "title": "Product 745c2880",
+    "price": 49,
+    "description": "Production code"
+  },
+  {
+    "id": "829b9b48",
+    "title": "Python Tool - python_developer",
+    "price": 49,
+    "description": "python_developer for fiverr. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "8a629905",
+    "title": "Python Tool - python_developer",
+    "price": 49,
+    "description": "python_developer for upwork. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "8f14c0b4",
+    "title": "Python Tool - Python utility: file ops",
+    "price": 49,
+    "description": "Python utility: file ops. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "94efdc1c",
+    "title": "Product 94efdc1c",
+    "price": 49,
+    "description": "Production code"
+  },
+  {
+    "id": "9b6a1f53",
+    "title": "Product 9b6a1f53",
+    "price": 49,
+    "description": "Production code"
+  },
+  {
+    "id": "b5d0fe5d",
+    "title": "Python Tool - python_developer",
+    "price": 49,
+    "description": "python_developer for fiverr. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "c94be3f2",
+    "title": "Python Tool - Python web scraper: multi-site",
+    "price": 49,
+    "description": "Python web scraper: multi-site. Production-quality code. Ready to use, well documented, MIT licensed."
+  },
+  {
+    "id": "e4bf0e92",
+    "title": "Product e4bf0e92",
+    "price": 49,
+    "description": "Production code"
   }
 ]
