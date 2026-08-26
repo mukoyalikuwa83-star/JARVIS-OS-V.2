@@ -102,6 +102,7 @@ _MIC_GAIN_DB = 42
 _MIC_NOISE_GATE_THRESHOLD = 3
 _MIC_AGC_TARGET = 6000
 _MIC_AGC_RATE = 0.08
+_MIC_DEVICE_ID = None  # None = auto-detect working mic
 
 # Tool calls that mutate external state, the UI, or running processes. They are
 # executed strictly in order so later calls always see the effects of earlier ones.
@@ -3119,13 +3120,45 @@ class JarvisLive:
                     return
 
     async def _listen_audio(self):
-        print("[Assistant] 🎤 Mic started")
-        loop = asyncio.get_event_loop()
         import numpy as np
+        loop = asyncio.get_event_loop()
         gain = 10 ** (_MIC_GAIN_DB / 20.0)
         agc_level = _MIC_AGC_TARGET
-        _echo_buf = np.zeros(1024, dtype=np.float32)
-        _echo_adapt_rate = 0.15
+
+        mic_device = _MIC_DEVICE_ID
+        if mic_device is None:
+            try:
+                import time as _t
+                devs = sd.query_devices()
+                best_rms = 0
+                best_idx = None
+                for i, d in enumerate(devs):
+                    if d['max_input_channels'] < 1:
+                        continue
+                    if 'stereo mix' in d['name'].lower():
+                        continue
+                    try:
+                        sr = int(d.get('default_samplerate', 16000))
+                        audio = sd.rec(int(0.5 * sr), samplerate=sr, channels=1, dtype='int16', device=i)
+                        sd.wait()
+                        rms = float(np.sqrt(np.mean(audio.astype(np.float32) ** 2)))
+                        if rms > best_rms:
+                            best_rms = rms
+                            best_idx = i
+                    except Exception:
+                        pass
+                if best_idx is not None and best_rms > 50:
+                    mic_device = best_idx
+                    dev_name = devs[best_idx]['name']
+                    print(f"[Assistant] Mic auto-detected: device {mic_device} ({dev_name}) rms={best_rms:.1f}")
+                else:
+                    mic_device = None
+                    print("[Assistant] WARNING: No working mic found. Using default device.")
+            except Exception as e:
+                print(f"[Assistant] Mic detection error: {e}")
+                mic_device = None
+
+        print("[Assistant] Mic started")
 
         def callback(indata, frames, time_info, status):
             if self.ui.muted:
@@ -3182,13 +3215,16 @@ class JarvisLive:
             loop.call_soon_threadsafe(_safe_put)
 
         try:
-            with sd.InputStream(
+            stream_kwargs = dict(
                 samplerate=SEND_SAMPLE_RATE,
                 channels=CHANNELS,
                 dtype="int16",
                 blocksize=CHUNK_SIZE,
                 callback=callback,
-            ):
+            )
+            if mic_device is not None:
+                stream_kwargs["device"] = mic_device
+            with sd.InputStream(**stream_kwargs):
                 print("[Assistant] 🎤 Mic stream open")
                 while not self._shutdown_requested.is_set():
                     await asyncio.sleep(0.1)
@@ -3819,60 +3855,15 @@ class JarvisLive:
             print(f"[Assistant] Proactive job failed: {e}")
 
     async def _mood_checkin_loop(self):
-        """Periodically check mood and proactively engage if needed."""
-        last_checkin = time.monotonic()
-        last_silence_warn = 0.0
+        """Periodically check mood — passive only, no proactive engagement."""
         while True:
-            await asyncio.sleep(30)
-            if self._shutdown_requested.is_set() or not self.session:
-                continue
-            now = time.monotonic()
-            mood = self._mood_analyzer.get_mood()
-            fatigue = self._mood_analyzer.get_fatigue()
-            stress = self._mood_analyzer.get_stress()
-            silence_duration = now - self._last_user_speech_at if self._last_user_speech_at else 999
-
-            if silence_duration > 600 and now - last_silence_warn > 600:
-                try:
-                    await self._safe_send_content(
-                        turns={"parts": [{"text": (
-                            "[MOOD PROACTIVE] The user has been silent for a while. "
-                            "Check in on them naturally — say something like 'yo you still there?' or 'you good?' "
-                            "Keep it casual and brief."
-                        )}]},
-                        turn_complete=True,
-                    )
-                    last_silence_warn = now
-                except Exception:
-                    pass
-
-            if fatigue > 0.8 and now - last_checkin > 120:
-                try:
-                    await self._safe_send_content(
-                        turns={"parts": [{"text": (
-                            "[MOOD PROACTIVE] The user sounds very tired. "
-                            "Offer to handle something for them or suggest they take a break. "
-                            "Be caring but casual — don't be preachy."
-                        )}]},
-                        turn_complete=True,
-                    )
-                    last_checkin = now
-                except Exception:
-                    pass
-
-            if stress > 0.8 and now - last_checkin > 180:
-                try:
-                    await self._safe_send_content(
-                        turns={"parts": [{"text": (
-                            "[MOOD PROACTIVE] The user sounds stressed. "
-                            "Offer to help with what they're working on. "
-                            "Be direct and helpful, skip the chatter."
-                        )}]},
-                        turn_complete=True,
-                    )
-                    last_checkin = now
-                except Exception:
-                    pass
+            await asyncio.sleep(60)
+            if self._shutdown_requested.is_set():
+                return
+            try:
+                self._mood_analyzer.get_mood()
+            except Exception:
+                pass
 
     async def _money_making_loop(self):
         """Autonomous money loop. JARVIS works alone - never stops."""
@@ -4083,34 +4074,13 @@ class JarvisLive:
                 await asyncio.sleep(30)
 
     async def _screen_awareness_loop(self):
-        """Proactively read screen context and offer help when JARVIS detects something."""
+        """Passive screen context — only used when user asks for help."""
         while True:
-            await asyncio.sleep(15)
-            if self._shutdown_requested.is_set() or not self.session:
-                continue
-            if self._is_speaking:
-                continue
+            await asyncio.sleep(60)
+            if self._shutdown_requested.is_set():
+                return
             try:
-                should_read, reason = self._screen_awareness.should_read_screen()
-                if should_read and reason:
-                    err_ctx = self._screen_awareness.get_error_context()
-                    context = self._screen_awareness.get_current_context()
-                    proactive_msg = (
-                        f"[SCREEN AWARENESS] {reason}\n"
-                        f"Current context: {context}\n"
-                    )
-                    if err_ctx:
-                        proactive_msg += (
-                            f"Error detected: {err_ctx.get('app', 'unknown')} — "
-                            f"{err_ctx.get('error', 'unknown')}.\n"
-                            "Offer to help fix it. Be brief and direct."
-                        )
-                    else:
-                        proactive_msg += "Mention you noticed the screen change and offer help if relevant."
-                    await self._safe_send_content(
-                        turns={"parts": [{"text": proactive_msg}]},
-                        turn_complete=True,
-                    )
+                self._screen_awareness.should_read_screen()
             except Exception:
                 pass
     async def run(self):
