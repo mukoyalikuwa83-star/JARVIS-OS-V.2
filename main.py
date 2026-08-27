@@ -2588,13 +2588,7 @@ class JarvisLive:
                 from actions.screen_automation import handle as screen_auto_handle
                 r = await loop.run_in_executor(None, lambda: send_message(parameters=args, response=None, player=self.ui, session_memory=None))
                 result = r or f"Message sent to {args.get('receiver')}."
-                if "DONE" in str(result).upper() or "SENT" in str(result).upper() or "DRAFT" in str(result).upper():
-                    verify_desc = f"sent message to {args.get('receiver', 'someone')} via {args.get('platform', 'messaging')}"
-                    try:
-                        vr = await loop.run_in_executor(None, lambda: screen_auto_handle(parameters={"action": "verify_action", "target": verify_desc}))
-                        result += f"\n[VERIFIED] {vr}"
-                    except Exception:
-                        result += "\n[VERIFY SKIPPED]"
+                # Skip screenshot verification for messaging — too slow
 
             elif name == "email_control":
                 from actions.email_control import email_control
@@ -2829,10 +2823,9 @@ class JarvisLive:
                 from actions.screen_automation import handle as screen_auto_handle
                 r = await loop.run_in_executor(None, lambda: screen_auto_handle(parameters=args))
                 result = r or "Screen automation completed."
-                auto_verify_actions = {"click", "double_click", "right_click", "type_text", "hotkey",
-                                       "press_enter", "press_escape", "press_tab", "paste_text",
-                                       "drag", "scroll", "scroll_down"}
-                if args.get("action", "") in auto_verify_actions:
+                # Only verify destructive/critical actions, not routine ones (speed optimization)
+                verify_actions = {"close_window", "shutdown", "restart", "sleep", "lock"}
+                if args.get("action", "") in verify_actions:
                     verify_desc = f"screen_auto {args.get('action')} {args.get('target', '') or args.get('value', '')}"
                     try:
                         vr = await loop.run_in_executor(None, lambda: screen_auto_handle(parameters={"action": "verify_action", "target": verify_desc}))

@@ -9,6 +9,42 @@ import re
 import ctypes
 from pathlib import Path
 
+# Auto-configure Tesseract if installed on Windows
+def _configure_tesseract():
+    import shutil
+    t = shutil.which("tesseract")
+    if t:
+        return
+    common = [
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+    ]
+    for p in common:
+        if os.path.exists(p):
+            os.environ["PATH"] = os.path.dirname(p) + ";" + os.environ.get("PATH", "")
+            os.environ["TESSDATA_PREFIX"] = os.path.dirname(p)
+            try:
+                import pytesseract
+                pytesseract.pytesseract.tesseract_cmd = p
+            except ImportError:
+                pass
+            return
+    # Also check winget install
+    import glob
+    for pattern in [r"C:\Users\*\AppData\Local\Tesseract*\tesseract.exe",
+                    r"C:\Users\*\AppData\Local\Microsoft\WinGet\*\*Tesseract*\tesseract.exe"]:
+        found = glob.glob(pattern)
+        if found:
+            os.environ["PATH"] = os.path.dirname(found[0]) + ";" + os.environ.get("PATH", "")
+            try:
+                import pytesseract
+                pytesseract.pytesseract.tesseract_cmd = found[0]
+            except ImportError:
+                pass
+            return
+
+_configure_tesseract()
+
 
 def _run(cmd, timeout=10):
     try:

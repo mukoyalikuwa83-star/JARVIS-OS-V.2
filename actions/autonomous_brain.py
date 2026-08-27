@@ -297,12 +297,12 @@ def _run_full_cycle() -> str:
             results.append(f"[WORKER] Heal error: {e}")
         try:
             from actions.money_makers import handle as mm
-            mm({"action": "check_markets"})
+            mm({"action": "crypto_status"})
         except Exception:
             pass
         try:
             from actions.self_evolution import handle as se
-            se({"action": "audit"})
+            se({"action": "self_audit"})
         except Exception:
             pass
 
@@ -310,7 +310,7 @@ def _run_full_cycle() -> str:
     if phase == "research":
         try:
             from actions.real_hustle import handle as rh
-            ideas = rh({"action": "suggest"})
+            ideas = rh({"action": "ideas"})
             results.append(f"[BRAIN] Hustle research: {str(ideas)[:60]}")
         except Exception:
             results.append("[BRAIN] Hustle research: unavailable")
