@@ -24,6 +24,23 @@ _DATA_DIR = Path(__file__).resolve().parent.parent / ".jarvis"
 _DATA_DIR.mkdir(exist_ok=True)
 
 
+def _safe_clipboard_copy(text: str) -> bool:
+    try:
+        pyperclip.copy(text)
+        return True
+    except Exception as e:
+        log.warning("pyperclip.copy failed: %s", e)
+        return False
+
+
+def _safe_clipboard_paste() -> str:
+    try:
+        return pyperclip.paste()
+    except Exception as e:
+        log.warning("pyperclip.paste failed: %s", e)
+        return ""
+
+
 def _normalize_url(url):
     if not url:
         return url
@@ -104,13 +121,13 @@ def browser_control(parameters=None, player=None):
     elif action == "get_text":
         if _HAS_GUI_DEPS:
             _focus_active()
-            pyperclip.copy("")
+            _safe_clipboard_copy("")
             time.sleep(0.05)
             pyautogui.hotkey("ctrl", "a")
             time.sleep(0.1)
             pyautogui.hotkey("ctrl", "c")
             time.sleep(0.15)
-            return pyperclip.paste()
+            return _safe_clipboard_paste()
         return "get_text requires pyautogui"
 
     elif action == "get_url":
@@ -118,11 +135,11 @@ def browser_control(parameters=None, player=None):
             _focus_active()
             pyautogui.hotkey("ctrl", "l")
             time.sleep(0.2)
-            pyperclip.copy("")
+            _safe_clipboard_copy("")
             time.sleep(0.05)
             pyautogui.hotkey("ctrl", "c")
             time.sleep(0.15)
-            url_result = pyperclip.paste().strip()
+            url_result = _safe_clipboard_paste().strip()
             pyautogui.press("escape")
             time.sleep(0.1)
             return url_result
@@ -145,16 +162,20 @@ def browser_control(parameters=None, player=None):
 
     elif action == "type":
         if _HAS_GUI_DEPS and text:
-            pyperclip.copy(text)
-            pyautogui.hotkey("ctrl", "v")
+            if _safe_clipboard_copy(text):
+                pyautogui.hotkey("ctrl", "v")
+            else:
+                pyautogui.typewrite(text, interval=0.02)
             return f"Typed: {text[:50]}..."
         return "Type requires text and pyautogui"
 
     elif action == "fill_form":
         if _HAS_GUI_DEPS and text:
-            pyperclip.copy(text)
-            pyautogui.hotkey("ctrl", "a")
-            pyautogui.hotkey("ctrl", "v")
+            if _safe_clipboard_copy(text):
+                pyautogui.hotkey("ctrl", "a")
+                pyautogui.hotkey("ctrl", "v")
+            else:
+                pyautogui.typewrite(text, interval=0.02)
             return f"Filled form with: {text[:50]}..."
         return "Fill form requires text"
 
@@ -182,12 +203,12 @@ def browser_control(parameters=None, player=None):
 
     elif action == "select_all_and_copy":
         if _HAS_GUI_DEPS:
-            pyperclip.copy("")
+            _safe_clipboard_copy("")
             pyautogui.hotkey("ctrl", "a")
             time.sleep(0.1)
             pyautogui.hotkey("ctrl", "c")
             time.sleep(0.15)
-            return pyperclip.paste()
+            return _safe_clipboard_paste()
         return "select_all_and_copy requires pyautogui"
 
     elif action == "smart_click":
@@ -203,8 +224,10 @@ def browser_control(parameters=None, player=None):
 
     elif action == "smart_type":
         if _HAS_GUI_DEPS and text:
-            pyperclip.copy(text)
-            pyautogui.hotkey("ctrl", "v")
+            if _safe_clipboard_copy(text):
+                pyautogui.hotkey("ctrl", "v")
+            else:
+                pyautogui.typewrite(text, interval=0.02)
             return f"Smart typed: {text[:50]}..."
         return "Smart type requires text"
 
@@ -276,8 +299,10 @@ def _open_url_pyautogui(url):
             time.sleep(0.3)
         pyautogui.hotkey("ctrl", "l")
         time.sleep(0.15)
-        pyperclip.copy(url)
-        pyautogui.hotkey("ctrl", "v")
+        if _safe_clipboard_copy(url):
+            pyautogui.hotkey("ctrl", "v")
+        else:
+            pyautogui.typewrite(url, interval=0.01)
         time.sleep(0.1)
         pyautogui.press("enter")
         time.sleep(1.5)
@@ -332,8 +357,10 @@ def navigate_to(url):
     time.sleep(0.2)
     pyautogui.hotkey("ctrl", "l")
     time.sleep(0.15)
-    pyperclip.copy(url)
-    pyautogui.hotkey("ctrl", "v")
+    if _safe_clipboard_copy(url):
+        pyautogui.hotkey("ctrl", "v")
+    else:
+        pyautogui.typewrite(url, interval=0.01)
     time.sleep(0.1)
     pyautogui.press("enter")
     time.sleep(2)
@@ -343,8 +370,10 @@ def navigate_to(url):
 def type_text(text, use_clipboard=True):
     _check_deps()
     if use_clipboard:
-        pyperclip.copy(text)
-        pyautogui.hotkey("ctrl", "v")
+        if _safe_clipboard_copy(text):
+            pyautogui.hotkey("ctrl", "v")
+        else:
+            pyautogui.typewrite(text, interval=0.02)
     else:
         pyautogui.typewrite(text, interval=0.02)
     time.sleep(0.1)
@@ -472,10 +501,10 @@ class FreelancerAutomation:
         time.sleep(0.5)
         click_at(screen_w // 2, int(screen_h * 0.5))
         time.sleep(0.3)
-        pyperclip.copy(proposal_text)
-        pyautogui.hotkey("ctrl", "a")
-        time.sleep(0.1)
-        pyautogui.hotkey("ctrl", "v")
+        if _safe_clipboard_copy(proposal_text):
+            pyautogui.hotkey("ctrl", "a")
+            time.sleep(0.1)
+            pyautogui.hotkey("ctrl", "v")
         time.sleep(0.5)
 
         if budget:
@@ -489,8 +518,8 @@ class FreelancerAutomation:
             click_at(screen_w // 2, int(screen_h * 0.4))
             time.sleep(0.2)
             pyautogui.hotkey("ctrl", "a")
-            pyperclip.copy(str(budget))
-            pyautogui.hotkey("ctrl", "v")
+            if _safe_clipboard_copy(str(budget)):
+                pyautogui.hotkey("ctrl", "v")
             time.sleep(0.3)
 
         steps.append("6. PAUSED - Review and submit manually.")

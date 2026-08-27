@@ -3442,6 +3442,10 @@ class JarvisLive:
         prebuf = []
         prebuf_target = 1
         prebuffering = True
+        _STUCK_SPEAKING_TIMEOUT = 5.0
+        _TURN_DONE_GRACE_SECS = 2.0
+        _last_audio_at = time.monotonic()
+        _turn_done_at: float | None = None
 
         try:
             while True:
@@ -3460,6 +3464,8 @@ class JarvisLive:
                     prebuffering = True
                     if self._turn_done_event:
                         self._turn_done_event.clear()
+                    _turn_done_at = None
+                    _last_audio_at = time.monotonic()
                     self.ui.set_mic_state("barge_in")
                     print("[Assistant] 🛑 Barge-in: stopped playback")
                     continue
@@ -3469,21 +3475,39 @@ class JarvisLive:
                         self.audio_in_queue.get(),
                         timeout=0.04
                     )
+                    _last_audio_at = time.monotonic()
+                    _turn_done_at = None
                 except asyncio.TimeoutError:
-                    if (
-                        self._turn_done_event
-                        and self._turn_done_event.is_set()
-                        and self.audio_in_queue.empty()
-                    ):
-                        if prebuffering and prebuf:
-                            for c in prebuf:
-                                await asyncio.to_thread(stream.write, c)
-                            prebuf.clear()
+                    now = time.monotonic()
+
+                    if self._is_speaking and (now - _last_audio_at) > _STUCK_SPEAKING_TIMEOUT:
+                        print("[Assistant] ⚠️ Watchdog: stuck-speaking timeout, stopping playback")
                         self.set_speaking(False)
                         self._turn_done_event.clear()
+                        _turn_done_at = None
+                        prebuf.clear()
                         prebuffering = True
                         if self._complete_self_quit_after_audio():
                             return
+                        continue
+
+                    if (
+                        self._turn_done_event
+                        and self._turn_done_event.is_set()
+                    ):
+                        if _turn_done_at is None:
+                            _turn_done_at = now
+                        if (now - _turn_done_at) >= _TURN_DONE_GRACE_SECS:
+                            if prebuffering and prebuf:
+                                for c in prebuf:
+                                    await asyncio.to_thread(stream.write, c)
+                                prebuf.clear()
+                            self.set_speaking(False)
+                            self._turn_done_event.clear()
+                            _turn_done_at = None
+                            prebuffering = True
+                            if self._complete_self_quit_after_audio():
+                                return
                     continue
 
                 if self._tts_engine and self._ext_tts_provider and self._ext_tts_provider != "gemini":
@@ -4111,6 +4135,8 @@ def main():
                         provider=provider,
                         api_key=api_key,
                         voice_id=voice_id,
+                        on_speaking_start=lambda: jarvis.set_speaking(True),
+                        on_speaking_stop=lambda: jarvis.set_speaking(False),
                     )
                     jarvis.ui.write_log(f"SYS: TTS engine ready: {provider} / {voice_id}")
                     jarvis.ui.write_log("SYS: Gemini audio muted - using external TTS")
