@@ -14,7 +14,7 @@ def write_status(data: dict) -> None:
     try:
         _ensure_dir()
         payload = {**data}
-        payload.setdefault("timestamp", datetime.utcnow().isoformat() + "Z")
+        payload.setdefault("timestamp", datetime.now(datetime.UTC) if hasattr(datetime, 'UTC') else datetime.utcnow().isoformat() + "Z")
         STATUS_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     except Exception:
         pass
