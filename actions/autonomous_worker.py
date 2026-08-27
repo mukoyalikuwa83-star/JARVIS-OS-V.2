@@ -1697,7 +1697,13 @@ footer{{text-align:center;padding:30px;color:#444;font-size:0.8em;border-top:1px
         return "\n".join(lines)
 
     def more_products(self, target=None):
-        count = min(int(target) if target else 3, 10)
+        import re as _re
+        m = _re.search(r"\d+", str(target)) if target else None
+        try:
+            count = min(int(m.group(0)) if m else 3, 10)
+        except Exception:
+            count = 3
+        platform_hint = "" if (m or not target) else str(target)
         wts = ["flask_api", "web_dashboard", "cli_tool", "etl_pipeline", "saas_template",
                "python_script", "web_scraper", "discord_bot", "automation_script",
                "telegram_bot", "data_analysis", "api_wrapper"]

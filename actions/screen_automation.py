@@ -69,6 +69,8 @@ def handle(parameters=None):
         "copy_selection": _copy_selection,
         "undo": _undo,
         "verify_action": lambda: _verify_action(target),
+        "click_on_text": lambda: _click_on_text(target),
+        "click_text": lambda: _click_on_text(target),
         "help": _help,
     }
 
@@ -111,7 +113,8 @@ def _help():
   press_backspace   - Press Backspace
   select_all        - Ctrl+A
   copy_selection    - Ctrl+C
-  undo              - Ctrl+Z"""
+  undo              - Ctrl+Z
+  click_on_text     - OCR: click text you can SEE (target=label/button text)"""
 
 
 def _click(x, y):
@@ -134,6 +137,47 @@ def _double_click(x, y):
     except Exception as e:
         return f"Double-click failed: {e}"
     return f"Double-clicked at ({x}, {y})"
+
+
+def _click_on_text(text, double=False):
+    """OCR-driven click: read the screen, find the text the model can SEE, click its center.
+    Falls back to a raw search for the literal string in the extracted text."""
+    import io
+    if not text:
+        return "Provide the text to click (target=label/button text)"
+    try:
+        from PIL import ImageGrab
+        img = ImageGrab.grab()
+    except Exception as e:
+        return f"Click-on-text failed: could not grab screen ({e})"
+    # Prefer OCR word boxes for exact pixel targeting
+    try:
+        import pytesseract
+        data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
+        n = len(data.get("text", []))
+        target = text.strip().lower()
+        best = None
+        for i in range(n):
+            word = str(data.get("text", [])[i] or "").strip()
+            if not word:
+                continue
+            if word.lower() == target or target in word.lower() or word.lower() in target:
+                x, y = data["left"][i], data["top"][i]
+                w, h = data["width"][i], data["height"][i]
+                cx, cy = x + w // 2, y + h // 2
+                # keep the longest (most specific) match
+                if best is None or len(word) > best[0]:
+                    best = (len(word), cx, cy)
+        if best:
+            pag = _safe_import()
+            if not pag:
+                return "pyautogui not installed"
+            pag.click(best[1], best[2], clicks=2 if double else 1)
+            return f"Clicked text '{text}' at ({best[1]}, {best[2]})"
+    except Exception as e:
+        pass
+    # Fallback: capability report
+    return f"Could not locate '{text}' on screen via OCR. Use click x,y after reading the screen, or check that Tesseract is installed."
 
 
 def _right_click(x, y):

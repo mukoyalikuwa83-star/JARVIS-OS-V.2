@@ -235,79 +235,175 @@ def _end_day() -> str:
 
 
 def _run_full_cycle() -> str:
-    """Run a full autonomous cycle: build products, find jobs, apply, deploy store, track earnings."""
+    """True orchestrator: plans from goals/ideas, delegates to all sub-agents, tracks outcomes."""
     results = []
     results.append("=== FULL AUTONOMOUS CYCLE ===")
+    import random
 
     try:
         from actions.autonomous_worker import AutonomousWorker
         aw = AutonomousWorker()
+    except Exception as e:
+        results.append(f"[BRAIN] Worker unavailable: {e}")
+        return "\n".join(results)
 
-        # 1. Build a product
-        import random
-        product_types = ["flask_api", "web_dashboard", "cli_tool", "etl_pipeline",
-                         "saas_template", "discord_bot", "telegram_bot", "automation_script",
-                         "chrome_extension", "landing_page", "api_integration", "data_pipeline"]
-        descriptions = [
-            "E-commerce API with auth, payments, inventory",
-            "Analytics dashboard with real-time charts",
-            "DevOps CLI with deployment automation",
-            "Data pipeline with ETL and monitoring",
-            "SaaS template with billing and auth",
-            "Discord bot with moderation and economy",
-            "Telegram bot with notifications and scheduling",
-            "Automation script for file management",
-            "Chrome extension for productivity",
-            "Landing page with pricing and testimonials",
-            "Multi-API integration with caching",
-            "Streaming data pipeline with alerts",
-        ]
-        wt = random.choice(product_types)
-        desc = random.choice(descriptions)
+    # Rotate effort across phases so every cycle drives real progress
+    cycle_no = _cycle_count() + 1
+    phases = ["build", "apply", "evolve", "build", "research", "build"]
+    phase = phases[(cycle_no - 1) % len(phases)]
+
+    # PICK A TARGET from prioritized ideas if any, else a strong default pool
+    target_desc = _pick_build_idea()
+    results.append(f"[BRAIN] Phase '{phase}' — target: {target_desc[:60]}")
+
+    try:
+        # ALWAYS: build a fresh product (money engine)
+        wt, desc = _choose_product()
+        if target_desc and phase != "research":
+            desc = target_desc
         build_result = aw.do_work(wt, desc)
-        results.append(f"[WORKER] Built {wt}: {build_result[:80]}")
+        results.append(f"[WORKER] Built {wt}: {build_result[:70]}")
+    except Exception as e:
+        results.append(f"[WORKER] Build error: {e}")
 
-        # 2. Find jobs on active platforms
-        status = aw.get_status()
-        if "freelancer" in status.lower():
-            job_result = aw.find_jobs("freelancer", "python")
-            results.append(f"[WORKER] Jobs: {job_result[:80]}")
+    # APPLY phase: find + quick-apply on active platforms
+    if phase in ("apply", "build"):
+        try:
+            status = aw.get_status()
+            if "active" in status.lower():
+                for plat in _active_platforms():
+                    if not plat or plat == "none":
+                        continue
+                    try:
+                        jr = aw.find_jobs(plat, "python")
+                        results.append(f"[WORKER] {plat} jobs: {jr[:60]}")
+                        jr_l = jr.lower()
+                        if "approval" in jr_l or "pending" in jr_l:
+                            results.append(f"[WORKER] {plat}: job(s) staged for approval")
+                    except Exception as e:
+                        results.append(f"[WORKER] {plat} scan: {e}")
+        except Exception as e:
+            results.append(f"[WORKER] Apply/scan error: {e}")
 
-        # 3. Deploy store
-        deploy_result = aw.deploy()
-        results.append(f"[WORKER] Deploy: {deploy_result.split(chr(10))[0][:60]}")
+    # EVOLVE phase: self-heal + self-improvement + money-maker heartbeat
+    if phase in ("evolve", "build"):
+        try:
+            heal = aw.self_heal()
+            if "fix" in heal.lower():
+                results.append(f"[WORKER] Heal: {heal[:60]}")
+            else:
+                results.append("[WORKER] Health: OK")
+        except Exception as e:
+            results.append(f"[WORKER] Heal error: {e}")
+        try:
+            from actions.money_makers import handle as mm
+            mm({"action": "check_markets"})
+        except Exception:
+            pass
+        try:
+            from actions.self_evolution import handle as se
+            se({"action": "audit"})
+        except Exception:
+            pass
 
-        # 4. Check pending approvals
+    # RESEARCH phase: keep the knowledge/idea base fresh
+    if phase == "research":
+        try:
+            from actions.real_hustle import handle as rh
+            ideas = rh({"action": "suggest"})
+            results.append(f"[BRAIN] Hustle research: {str(ideas)[:60]}")
+        except Exception:
+            results.append("[BRAIN] Hustle research: unavailable")
+
+    # ALWAYS: deploy storefront + check pending + earnings
+    try:
+        dr = aw.deploy()
+        results.append(f"[WORKER] Deploy: {str(dr).split(chr(10))[0][:55]}")
+    except Exception as e:
+        results.append(f"[WORKER] Deploy error: {e}")
+
+    try:
         pending = aw.get_pending()
         if "No pending" not in pending:
-            results.append(f"[WORKER] Pending: {pending[:60]}")
+            results.append(f"[WORKER] Pending: {pending[:55]}")
+    except Exception:
+        pass
 
-        # 5. Earnings report
+    try:
         earnings = aw.earnings()
-        results.append(f"[WORKER] {earnings.split(chr(10))[1][:60] if chr(10) in earnings else earnings[:60]}")
+        line = [l for l in earnings.split("\n") if l.strip() and "$" in l]
+        if line:
+            results.append(f"[WORKER] {line[0][:55]}")
+    except Exception:
+        pass
 
-    except Exception as e:
-        results.append(f"[WORKER] Error: {e}")
-
-    # 6. Update brain state
+    # Commit state
     state = _load_json(_BRAIN_STATE, {})
-    state["cycle_count"] = state.get("cycle_count", 0) + 1
+    state["cycle_count"] = cycle_no
     state["last_cycle"] = _now()
     state["status"] = "active"
     state["tasks_completed"] = state.get("tasks_completed", 0) + 1
     try:
-        from actions.autonomous_worker import AutonomousWorker as _AW
-        _w = _AW()
-        state["money_earned"] = _w._wallet.get("earned", 0)
+        _w = AutonomousWorker()
+        state["money_earned"] = _w._wallet.get("earned", 0) if hasattr(_w, "_wallet") else state.get("money_earned", 0)
     except Exception:
         pass
     _save_json(_BRAIN_STATE, state)
 
-    # 7. Log the cycle
-    _log_task(f"cycle_{state['cycle_count']}", "brain", "run_full_cycle", "; ".join(results))
-
-    results.append(f"\nCycle {state['cycle_count']} complete.")
+    _log_task(f"cycle_{cycle_no}", "brain", "run_full_cycle", "; ".join(results))
+    results.append(f"\nCycle {cycle_no} complete.")
     return "\n".join(results)
+
+
+def _cycle_count() -> int:
+    state = _load_json(_BRAIN_STATE, {})
+    return state.get("cycle_count", 0)
+
+
+def _active_platforms():
+    try:
+        from actions.autonomous_worker import AutonomousWorker
+        aw = AutonomousWorker()
+        if hasattr(aw, "_accounts"):
+            return [p for p, a in aw._accounts.items() if a.get("status") == "active"]
+        return [p for p, a in getattr(aw, "_accounts", {}).items() if a.get("status") == "active"]
+    except Exception:
+        return ["freelancer"]
+
+
+def _pick_build_idea():
+    ideas = _load_json(_IDEAS_FILE, {"ideas": []})
+    pool = ideas.get("ideas", []) if isinstance(ideas, dict) else ideas
+    for idea in pool:
+        if isinstance(idea, dict):
+            text = idea.get("idea") or idea.get("text") or idea.get("title") or ""
+            if text and (idea.get("status") in (None, "todo", "pending")):
+                return str(text)
+    return ""
+
+
+def _choose_product():
+    types = ["flask_api", "web_dashboard", "cli_tool", "etl_pipeline", "saas_template",
+             "discord_bot", "telegram_bot", "automation_script", "chrome_extension",
+             "landing_page", "api_integration", "data_pipeline"]
+    descs = {
+        "flask_api": ["E-commerce API: products, cart, orders, payments", "Blog API: posts, comments, roles, search", "Task manager API: projects, tasks, deadlines", "File sharing API: upload, share, permissions", "Weather API: forecasts, alerts, history"],
+        "web_dashboard": ["CRM dashboard: contacts, deals, pipeline", "Analytics dashboard: campaigns, funnels", "Inventory dashboard: stock, orders, alerts", "Finance dashboard: transactions, charts", "HR dashboard: employees, reviews, org chart"],
+        "cli_tool": ["Git workflow CLI: branching, release", "Docker CLI: containers, compose", "DB migration CLI: schemas, seeds", "API test CLI: requests, assertions", "CSV processor CLI: filter, transform"],
+        "etl_pipeline": ["Analytics pipeline: events, aggregation", "Log pipeline: parse, filter, alerts", "Inventory sync: suppliers, stock", "User data pipeline: profiles, segments", "Email pipeline: parse, extract, categorize"],
+        "saas_template": ["Invoice SaaS: templates, clients, payments", "Booking SaaS: calendars, appointments", "Form builder SaaS: drag-drop, webhooks", "Newsletter SaaS: subscribers, campaigns", "URL shortener SaaS: analytics, QR"],
+        "discord_bot": ["Moderation bot: rules, logs", "Music bot: queue, search", "Economy bot: currency, shop", "Ticketing bot: tickets, reactions"],
+        "telegram_bot": ["Admin bot: moderation, anti-spam", "RSS bot: feeds, news, reminders", "Crypto bot: prices, alerts", "Reminder bot: scheduling"],
+        "automation_script": ["Batch renamer: regex, preview", "Auto-backup: schedule, compress", "System watch: alerts, log", "File organizer: rules, folders"],
+        "chrome_extension": ["Tab manager: groups, search", "Password vault: vault, autofill", "Focus blocker: sites, timer", "Language helper: translate, lookup"],
+        "landing_page": ["SaaS launch page: pricing, testimonials", "Agency page: services, portfolio", "Product page: features, buy", "Portfolio page: projects, contact"],
+        "api_integration": ["Payment gateway integration", "Maps integration: geocode, routes", "Notifications hub: push, email", "Auth service: OAuth, JWT"],
+        "data_pipeline": ["Streaming alerts: real-time", "Market data feed: prices, history", "Social import: posts, metrics", "Reporting pipeline: daily digest"],
+    }
+    import random
+    wt = random.choice(types)
+    desc = random.choice(descs.get(wt, ["Full-stack utility project with API, docs, and deployment"]))
+    return wt, desc
 
 
 def _run_cycle() -> str:

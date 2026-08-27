@@ -138,7 +138,12 @@ def create_event(params=None):
 def list_events(params=None):
     browser = (params or {}).get("browser", "chrome")
     date_str = (params or {}).get("date", "today")
+    # headless default ON: never pops a browser during background checks
+    headless = (params or {}).get("headless", True)
     event_date = _parse_relative_date(date_str)
+
+    if headless:
+        return _list_events_local(event_date)
 
     ctrl, _ = _open_google_calendar(browser)
     if ctrl is None:
@@ -174,6 +179,48 @@ def list_events(params=None):
                            "count": len(events)})
     except Exception as e:
         return json.dumps({"error": f"Failed to list events: {e}"})
+
+
+def _list_events_local(event_date):
+    """Headless calendar read from the local reminders/agenda store. Never opens a browser."""
+    import datetime
+    events = []
+    now = datetime.datetime.now()
+
+    def add_from_json(path):
+        from pathlib import Path
+        try:
+            if not Path(path).exists():
+                return
+            import json as _json
+            data = _json.loads(Path(path).read_text(encoding="utf-8"))
+            for item in data if isinstance(data, list) else data.get("reminders", []):
+                if not isinstance(item, dict):
+                    continue
+                when = item.get("time") or item.get("when") or item.get("datetime")
+                title = item.get("title") or item.get("text") or item.get("message")
+                if not when or not title:
+                    continue
+                try:
+                    t = datetime.datetime.fromisoformat(str(when).replace("Z", "+00:00").replace("T", " "))
+                    if t.tzinfo:
+                        t = t.astimezone().replace(tzinfo=None)
+                except Exception:
+                    continue
+                if event_date.date() == t.date():
+                    events.append(f"{t.strftime('%I:%M %p')} - {title}")
+        except Exception:
+            pass
+
+    for p in (".jarvis/reminders.json", "memory/reminders.json", ".jarvis/agenda.json"):
+        add_from_json(p)
+
+    events.sort()
+    if not events:
+        return json.dumps({"date": event_date.strftime("%Y-%m-%d"), "events": [],
+                           "count": 0, "note": "No events found locally"})
+    return json.dumps({"date": event_date.strftime("%Y-%m-%d"), "events": events,
+                       "count": len(events)})
 
 
 def delete_event(params=None):

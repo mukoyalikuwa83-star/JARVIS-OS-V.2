@@ -12,6 +12,12 @@ echo [%date% %time%] JARVIS Watchdog started >> "%LOG%"
 echo [%date% %time%] Will auto-restart on crash >> "%LOG%"
 
 :restart
+rem Respect an intentional shutdown (JARVIS writes .stop before quitting)
+if exist "%JARVIS_DIR%\.jarvis\.stop" (
+    echo [%date% %time%] Intentional shutdown detected. Staying off. >> "%LOG%"
+    del /f /q "%JARVIS_DIR%\.jarvis\.stop" >nul 2>&1
+    goto :end
+)
 set /a RESTARTS+=1
 echo [%date% %time%] Starting JARVIS (restart #%RESTARTS%) >> "%LOG%"
 echo [%date% %time%] Starting JARVIS (restart #%RESTARTS%)...

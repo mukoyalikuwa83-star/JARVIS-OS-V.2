@@ -434,10 +434,17 @@ def _load_system_prompt() -> str:
     )
     try:
         prompt = PROMPT_PATH.read_text(encoding="utf-8").strip()
+        inventory = ""
+        try:
+            from core.inventory import build_brief
+            inventory = "\n\n" + build_brief()
+        except Exception:
+            pass
         return (
             identity_line
             + "\n\n"
             + prompt
+            + inventory
         )
     except Exception:
         return (
@@ -1456,6 +1463,7 @@ TOOL_DECLARATIONS = [
                                "move_window", "wait_and_click", "paste_text",
                                "press_enter", "press_escape", "press_tab",
                                "press_backspace", "select_all", "copy_selection", "undo",
+                               "click_on_text", "click_text",
                            ],
                            "description": "Screen automation action."},
                 "target": {"type": "STRING", "description": "Text to type, window title, description, or hotkey combo"},
@@ -2257,6 +2265,12 @@ class JarvisLive:
 
     def request_shutdown(self) -> None:
         """Stop live tasks and make the process exit after the UI closes."""
+        from pathlib import Path as _P
+        try:
+            _P(_P(__file__).resolve().parent / ".jarvis" / ".stop").write_text(
+                "intentional_shutdown", encoding="utf-8")
+        except Exception:
+            pass
         shutdown_requested = getattr(self, "_shutdown_requested", None)
         if shutdown_requested is None:
             self._shutdown_requested = threading.Event()
@@ -4065,6 +4079,11 @@ class JarvisLive:
                         await self._wait_before_reconnect(delay)
 
 def main():
+    from pathlib import Path as _P
+    try:
+        (_P(__file__).resolve().parent / ".jarvis" / ".stop").unlink(missing_ok=True)
+    except Exception:
+        pass
     if not wait_for_startup_claps():
         return
     os.environ.setdefault("JARVIS_AUTO_START", "1")

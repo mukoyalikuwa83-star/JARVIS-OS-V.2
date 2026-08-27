@@ -5,7 +5,16 @@ call .venv\Scripts\activate.bat
 set PYTHONIOENCODING=utf-8
 set PYTHONLEGACYWINDOWSSTDIO=utf-8
 
+rem Clear any intentional-stop marker so a manual launch always starts
+del /f /q ".jarvis\.stop" >nul 2>&1
+
 :restart
+rem Respect an intentional shutdown marker
+if exist ".jarvis\.stop" (
+    echo Intentional shutdown detected. Staying off.
+    del /f /q ".jarvis\.stop" >nul 2>&1
+    exit /b 0
+)
 echo ============================================
 echo   JARVIS OS V.2 - Starting...
 echo   %date% %time%
