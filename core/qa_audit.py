@@ -24,6 +24,7 @@ EXPECTED_TOOLS = {
     "autonomous_brain", "money_makers", "self_evolution", "auto_start",
     "mood_status",
     "screen_awareness", "real_hustle", "autonomous_worker", "account_manager",
+    "noise_filter", "instagram_browser", "safe_text_entry", "jarvis_file_stamp",
 }
 
 

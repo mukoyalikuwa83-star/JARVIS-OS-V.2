@@ -2042,6 +2042,70 @@ TOOL_DECLARATIONS = [
             "required": ["action"],
         }
     },
+    {
+        "name": "noise_filter",
+        "description": (
+            "Filter speech noise from audio input. Apply noise reduction to improve voice recognition quality. "
+            "Use 'process' to filter a file, 'status' to check filter state."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {"type": "STRING", "description": "process, status, help"},
+                "input_file": {"type": "STRING", "description": "Path to audio file to filter"},
+                "output_file": {"type": "STRING", "description": "Path for filtered output"},
+            },
+            "required": ["action"],
+        }
+    },
+    {
+        "name": "instagram_browser",
+        "description": (
+            "Automate Instagram tasks: open chat, prepare drafts, send messages. "
+            "Use 'open_chat' to open a DM, 'prepare_draft' to queue a message, 'send' to send a draft."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {"type": "STRING", "description": "open_chat, prepare_draft, send, clear_draft"},
+                "username": {"type": "STRING", "description": "Instagram username to message"},
+                "message": {"type": "STRING", "description": "Message text to send or draft"},
+            },
+            "required": ["action"],
+        }
+    },
+    {
+        "name": "safe_text_entry",
+        "description": (
+            "Safely type text into any application with mouse-click blocking and speed control. "
+            "Use 'type_text' to type slowly, 'type_enter' to type and press Enter, 'validate' to check target window."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {"type": "STRING", "description": "type_text, type_enter, validate"},
+                "text": {"type": "STRING", "description": "Text to type"},
+                "delay": {"type": "NUMBER", "description": "Delay between keystrokes in seconds (default 0.02)"},
+            },
+            "required": ["action"],
+        }
+    },
+    {
+        "name": "jarvis_file_stamp",
+        "description": (
+            "Stamp generated files with JARVIS metadata. Embeds creator info and timestamp into files. "
+            "Use 'stamp' to mark a file, 'check' to verify a stamp, 'help' for usage."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {"type": "STRING", "description": "stamp, check, help"},
+                "file_path": {"type": "STRING", "description": "Path to the file to stamp"},
+                "content": {"type": "STRING", "description": "Text content to stamp (for text files)"},
+            },
+            "required": ["action"],
+        }
+    },
 ]
 
 class JarvisLive:
@@ -3024,6 +3088,52 @@ class JarvisLive:
                 from actions.account_manager import handle as acct_handle
                 r = await loop.run_in_executor(None, lambda: acct_handle(params=args))
                 result = r or "Account action completed."
+
+            elif name == "noise_filter":
+                from actions.noise_filter import SpeechNoiseFilter
+                nf = SpeechNoiseFilter()
+                result = f"NoiseFilter ready. Methods: process(audio_ndarray), reset()."
+
+            elif name == "instagram_browser":
+                from actions.instagram_browser import prepare_instagram_draft, send_instagram_draft, clear_instagram_draft, read_instagram_open_chat
+                action = args.get("action", "help")
+                if action == "open_chat":
+                    result = read_instagram_open_chat()
+                elif action == "prepare_draft":
+                    result = prepare_instagram_draft(args.get("username", ""), args.get("message", ""))
+                elif action == "send":
+                    result = send_instagram_draft()
+                elif action == "clear_draft":
+                    result = clear_instagram_draft()
+                else:
+                    result = "InstagramBrowser: open_chat|prepare_draft|send|clear_draft"
+
+            elif name == "safe_text_entry":
+                from actions.safe_text_entry import safe_type_text, safe_type_then_enter, validate_safe_text_target
+                action = args.get("action", "validate")
+                text = args.get("text", "")
+                if action == "type_text":
+                    result = safe_type_text(text)
+                elif action == "type_enter":
+                    result = safe_type_then_enter(text)
+                elif action == "validate":
+                    result = validate_safe_text_target()
+                else:
+                    result = "SafeTextEntry: type_text|type_enter|validate"
+
+            elif name == "jarvis_file_stamp":
+                from actions.jarvis_file_stamp import mark_created_file, stamp_text_content, can_embed_stamp, write_sidecar_metadata
+                action = args.get("action", "help")
+                fp = args.get("file_path", "")
+                context = args.get("context", "Created by JARVIS")
+                if action == "stamp" and fp:
+                    result = mark_created_file(Path(fp), context)
+                elif action == "check" and fp:
+                    result = f"Can embed stamp: {can_embed_stamp(Path(fp))}"
+                elif action == "stamp_text" and args.get("content"):
+                    result = stamp_text_content(args["content"], Path(fp or "output.txt"), context)
+                else:
+                    result = "FileStamp: stamp|check|stamp_text"
 
             else:
                 result = f"Unknown tool: {name}"
