@@ -16,6 +16,9 @@ try:
     import pyautogui
     import pyperclip
     import pygetwindow as gw
+    pyautogui.FAILSAFE = False
+    pyautogui.PAUSE = 0.05
+    pyautogui.TIMEOUT = 5.0
     _HAS_GUI_DEPS = True
 except ImportError:
     _HAS_GUI_DEPS = False
@@ -148,13 +151,15 @@ def browser_control(parameters=None, player=None):
     elif action == "click":
         if _HAS_GUI_DEPS and text:
             try:
-                loc = pyautogui.locateOnScreen(text, confidence=0.7)
+                loc = pyautogui.locateOnScreen(text, confidence=0.7, grayscale=True)
                 if loc:
                     center = pyautogui.center(loc)
                     pyautogui.click(center)
                     return f"Clicked: {text}"
-            except Exception:
-                pass
+            except pyautogui.ImageNotFoundException:
+                log.debug("locateOnScreen image not found: %s", text)
+            except Exception as e:
+                log.debug("locateOnScreen failed: %s", e)
             if text.isdigit():
                 pyautogui.click(int(text), int(text))
                 return f"Clicked at: {text}"
@@ -214,7 +219,7 @@ def browser_control(parameters=None, player=None):
     elif action == "smart_click":
         if _HAS_GUI_DEPS and text:
             try:
-                loc = pyautogui.locateOnScreen(text, confidence=0.7)
+                loc = pyautogui.locateOnScreen(text, confidence=0.7, grayscale=True)
                 if loc:
                     pyautogui.click(pyautogui.center(loc))
                     return f"Smart clicked: {text}"
@@ -422,13 +427,15 @@ def scroll_up(clicks=3):
 def find_and_click_text_on_screen(text):
     _check_deps()
     try:
-        location = pyautogui.locateOnScreen(text, confidence=0.8)
+        location = pyautogui.locateOnScreen(text, confidence=0.8, grayscale=True)
         if location:
             center = pyautogui.center(location)
             pyautogui.click(center)
             return True
-    except Exception:
-        pass
+    except pyautogui.ImageNotFoundException:
+        log.debug("find_and_click_text_on_screen: image not found: %s", text)
+    except Exception as e:
+        log.debug("find_and_click_text_on_screen failed: %s", e)
     return False
 
 

@@ -2150,7 +2150,7 @@ class JarvisLive:
         self._barge_in_event = threading.Event()
         self._last_barge_in_time = 0.0
         self._playback_started_at = 0.0
-        self._barge_in_grace_ms = 0.8
+        self._barge_in_grace_ms = 1.5
         self._playback_energy = 0.0
         self._mic_energy_level = 0.0
         self._mic_energy_lock = threading.Lock()
@@ -2185,8 +2185,16 @@ class JarvisLive:
             self._user_is_addressing_jarvis = True
             return "direct_address"
         if self._is_speaking:
-            self._user_is_addressing_jarvis = True
-            return "barge_in"
+            with self._mic_energy_lock:
+                mic_level = self._mic_energy_level
+            if mic_level > 800 / 32768.0:
+                self._user_is_addressing_jarvis = True
+                return "barge_in"
+        time_since_speech = time.monotonic() - self._last_user_speech_at if self._last_user_speech_at else 999
+        if time_since_speech < 3.0:
+            return "follow_up"
+        self._user_is_addressing_jarvis = False
+        return "ambient"
         time_since_speech = time.monotonic() - self._last_user_speech_at if self._last_user_speech_at else 999
         if time_since_speech < 3.0:
             return "follow_up"
@@ -3305,9 +3313,9 @@ class JarvisLive:
                 now_mono = time.monotonic()
                 since_playback_start = now_mono - getattr(self, '_playback_started_at', now_mono)
                 since_barge_in = now_mono - getattr(self, '_last_barge_in_time', 0.0)
-                if since_playback_start > 0.8 and since_barge_in > 1.0:
+                if since_playback_start > 1.2 and since_barge_in > 1.5:
                     playback_level = getattr(self, '_playback_energy', 0.0)
-                    echo_threshold = max(playback_level * 2.0, 1500 / 32768.0)
+                    echo_threshold = max(playback_level * 3.0, 2000 / 32768.0)
                     if rms > echo_threshold:
                         self._barge_in_event.set()
                         self._last_barge_in_time = now_mono
