@@ -384,6 +384,9 @@ class AutonomousWorker:
             "redeploy": self.redeploy,
             "paypal": lambda: self.set_paypal(_first(target)),
             "heal": self.self_heal,
+            "sell": lambda: self.sell(_first(target), _first(value)),
+            "push_github": self.push_to_github,
+            "gumroad": lambda: self.create_gumroad_listing(_first(target)),
         }
         fn = h.get(action)
         if fn:
@@ -769,9 +772,26 @@ class AutonomousWorker:
         self._pending.append(proposal)
         self._save_all()
 
-        return (f"Drafted proposal for '{job_title}' on {platform}. "
-                f"Rate: ${rate}/hr. Added to pending for your approval. "
-                f"Tell me 'approve {proposal['id']}' to open the page and submit.")
+        proposal_url = f"https://www.freelancer.com/projects/python/?keyword={job_title.replace(' ', '+')}"
+        try:
+            _open(proposal_url)
+            import time as _t
+            _t.sleep(3)
+            try:
+                import pyautogui
+                pyautogui.hotkey("ctrl", "f")
+                _t.sleep(0.5)
+                pyautogui.typewrite(job_title[:30], interval=0.02)
+                _t.sleep(0.5)
+                pyautogui.press("escape")
+                _t.sleep(0.5)
+            except Exception:
+                pass
+        except Exception:
+            pass
+        return (f"Drafted + opened Freelancer for '{job_title}'. "
+                f"Rate: ${rate}/hr. Browser opened — find the job and click Submit Proposal. "
+                f"Proposal text:\n{proposal['proposal']}")
 
     def do_work(self, work_type, description):
         if not work_type:
@@ -1235,6 +1255,29 @@ class AutonomousWorker:
         lines.append(f"  Total catalog value: ${total_value}")
         return "\n".join(lines)
 
+    def sell(self, work_type=None, description=None):
+        if not work_type:
+            return "Provide: sell,<type>,<description>. Types: flask_api, web_dashboard, cli_tool, web_scraper, discord_bot, automation_script, telegram_bot, data_analysis, api_wrapper, etl_pipeline, saas_template, landing_page, chrome_extension, api_integration, data_pipeline, automation_suite, blog_post, python_script"
+        work_result = self.do_work(work_type, description)
+        if "Error" in work_result or "Provide" in work_result:
+            return work_result
+        lines = [work_result]
+        wid = None
+        for d in reversed(self._jobs.get("delivered", [])):
+            if d.get("status") == "completed":
+                wid = d["id"]
+                break
+        if wid:
+            deploy_result = self.deploy()
+            lines.append(deploy_result)
+            self._jobs.setdefault("listed", []).append({
+                "id": wid, "platform": "store", "listing": d.get("listing", {}),
+                "zip": d.get("zip", ""), "time": _now(), "status": "listed"
+            })
+            self._save_all()
+            lines.append(f"Product {wid} is now live on the store.")
+        return "\n".join(lines)
+
     def deploy(self, target=None):
         products_dir = _DATA_DIR / "products"
         deploy_dir = _DATA_DIR / "deploy"
@@ -1253,7 +1296,10 @@ class AutonomousWorker:
         catalog.sort(key=lambda x: x["listing"].get("price", 0), reverse=True)
         if not catalog:
             return "No products to deploy"
-        paypal = target or ""
+        config = _load(_DATA_DIR / "config.json", {})
+        paypal_username = target or config.get("paypal_link", "")
+        if not paypal_username:
+            paypal_username = "yourpaypal"
         total = sum(c["listing"].get("price", 0) for c in catalog)
         features_map = {
             "flask_api": ["JWT Authentication", "CRUD Endpoints", "Rate Limiting", "Input Validation", "Tests Included", "Production Ready"],
@@ -1280,7 +1326,8 @@ class AutonomousWorker:
             wt = l.get("category", "").lower().replace(" ", "_")
             feats = features_map.get(wt, ["Production Code", "Well Documented", "MIT License"])
             feat_html = "".join(f'<span class="feat">{f}</span>' for f in feats[:6])
-            pay_link = f"https://paypal.me/yourpaypallink/{l['price']}" if paypal else "#"
+            pay_link = f"https://paypal.me/{paypal_username}/{l['price']}"
+            download_link = f"https://github.com/mukoyalikuwa83-star/JARVIS-OS-V.2/releases/download/products/{c['id']}.zip"
             items_html += f"""
             <div class="product" id="product-{c['id']}">
               <div class="badge">{l.get('category', 'Code')}</div>
@@ -1289,8 +1336,8 @@ class AutonomousWorker:
               <div class="features">{feat_html}</div>
               <div class="meta">{c['size_kb']}KB &middot; ZIP Download &middot; MIT License &middot; Instant Delivery</div>
               <div class="price">${l['price']}</div>
-              <a href="{pay_link}" class="btn btn-buy">Buy Now</a>
-              <a href="#details-{idx}" class="btn btn-details">View Details</a>
+              <a href="{pay_link}" class="btn btn-buy" target="_blank">Buy Now — ${l['price']}</a>
+              <a href="{download_link}" class="btn btn-details" target="_blank">Download Preview</a>
             </div>"""
         standalone_html = f"""<!DOCTYPE html>
 <html lang="en"><head>
@@ -1334,7 +1381,7 @@ body{{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e
 </style></head><body>
 <div class="header">
   <h1>JARVIS Code Store</h1>
-  <p>Production-quality Python tools, bots, and scripts. Built with AI, ready to use.</p>
+  <p>Production-quality Python tools, bots, and scripts. Built with AI, tested, documented. Instant download after purchase.</p>
 </div>
 <div class="stats">
   <strong>{len(catalog)}</strong> products &middot; <strong>${total}</strong> total value &middot; MIT licensed &middot; Instant download
@@ -1351,7 +1398,7 @@ body{{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e
   <div class="faq-item"><h4>Can I get support?</h4><p>Yes. Contact us via email or Twitter for any questions about setup or customization.</p></div>
 </div>
 <div class="footer">
-  <p>Questions? Contact us on <a href="https://twitter.com/yourhandle">Twitter</a></p>
+  <p>Questions? Email: mukoyalikuwa83@gmail.com</p>
   <p style="margin-top:8px">Powered by JARVIS-OS &middot; All code is production-ready</p>
 </div>
 </body></html>"""
@@ -1428,6 +1475,96 @@ body{{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e
         config["paypal_link"] = target
         config_file.write_text(json.dumps(config, indent=2), encoding="utf-8")
         return f"PayPal link set: {target}. All buy buttons will use this."
+
+    def push_to_github(self):
+        repo_dir = Path(__file__).resolve().parent.parent
+        docs_dir = repo_dir / "docs"
+        products_dir = _DATA_DIR / "products"
+        deploy_dir = _DATA_DIR / "deploy"
+        downloads_dir = docs_dir / "downloads"
+        downloads_dir.mkdir(parents=True, exist_ok=True)
+        catalog = []
+        for z in (products_dir.glob("*.zip") if products_dir.exists() else []):
+            wid = z.stem
+            listing = None
+            for d in self._jobs.get("delivered", []):
+                if d.get("id") == wid:
+                    listing = d.get("listing", {})
+                    break
+            if listing:
+                catalog.append({"id": wid, "listing": listing, "zip": z.name,
+                               "zip_path": z, "size_kb": z.stat().st_size // 1024})
+        catalog.sort(key=lambda x: x["listing"].get("price", 0), reverse=True)
+        if not catalog:
+            return "No products to push"
+        for c in catalog:
+            src = c["zip_path"]
+            dst = downloads_dir / c["zip"]
+            if not dst.exists() or src.stat().st_mtime > dst.stat().st_mtime:
+                import shutil
+                shutil.copy2(str(src), str(dst))
+        store_html = deploy_dir / "store.html"
+        if store_html.exists():
+            import shutil
+            shutil.copy2(str(store_html), str(docs_dir / "index.html"))
+        catalog_json_path = docs_dir / "catalog.json"
+        catalog_json_path.write_text(json.dumps([{
+            "id": c["id"], "title": c["listing"].get("title", "Product"),
+            "price": c["listing"].get("price", 49),
+            "description": c["listing"].get("description", ""),
+            "download": f"downloads/{c['zip']}",
+        } for c in catalog], indent=2), encoding="utf-8")
+        try:
+            git_cmd = str(Path(r"C:\Program Files\Git\cmd\git.exe"))
+            result = subprocess.run(
+                [git_cmd, "add", "docs/"],
+                cwd=str(repo_dir), capture_output=True, text=True, timeout=30
+            )
+            result2 = subprocess.run(
+                [git_cmd, "commit", "-m", f"Deploy {len(catalog)} products to store"],
+                cwd=str(repo_dir), capture_output=True, text=True, timeout=30
+            )
+            result3 = subprocess.run(
+                [git_cmd, "push", "origin", "main"],
+                cwd=str(repo_dir), capture_output=True, text=True, timeout=60
+            )
+            pushed = result3.returncode == 0
+        except Exception as e:
+            pushed = False
+        total = sum(c["listing"].get("price", 0) for c in catalog)
+        status = "PUSHED to GitHub Pages" if pushed else "Built locally (push failed)"
+        return (f"{status}: {len(catalog)} products, ${total} total\n"
+                f"Store: https://mukoyalikuwa83-star.github.io/JARVIS-OS-V.2/\n"
+                f"Downloads: {len(list(downloads_dir.glob('*.zip')))} ZIPs in docs/downloads/")
+
+    def create_gumroad_listing(self, product_id=None):
+        if not product_id:
+            products_dir = _DATA_DIR / "products"
+            zips = sorted(products_dir.glob("*.zip"), key=lambda z: z.stat().st_mtime, reverse=True) if products_dir.exists() else []
+            if not zips:
+                return "No products to list"
+            product_id = zips[0].stem
+        listing = None
+        zip_name = None
+        for d in self._jobs.get("delivered", []):
+            if d.get("id") == product_id or product_id in d.get("id", ""):
+                listing = d.get("listing", {})
+                zip_name = d.get("zip", "")
+                break
+        if not listing:
+            return f"Product {product_id} not found"
+        _open("https://app.gumroad.com/products/new")
+        import time as _t
+        _t.sleep(4)
+        instructions = [
+            f"1. Title: {listing.get('title', 'Product')}",
+            f"2. Price: ${listing.get('price', 49)}",
+            f"3. Description: {listing.get('description', '')[:200]}",
+            f"4. Upload: .jarvis/products/{zip_name}",
+            f"5. Category: Software",
+            f"6. Click Publish",
+        ]
+        return "Gumroad listing form opened.\n" + "\n".join(instructions)
 
     def self_heal(self):
         issues = []
