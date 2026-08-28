@@ -97,7 +97,7 @@ SELF_QUIT_GOODBYE = (
 
 LIVE_VAD_SILENCE_MS = 150
 _LIVE_RECONNECT_MAX_DELAY = 5.0
-_LIVE_KEEPALIVE_INTERVAL = 25.0
+_LIVE_KEEPALIVE_INTERVAL = 15.0
 _MIC_GAIN_DB = 56
 _MIC_NOISE_GATE_THRESHOLD = 3
 _MIC_AGC_TARGET = 6000
@@ -3759,7 +3759,8 @@ class JarvisLive:
                 self._last_keepalive_activity = time.monotonic()
             except Exception as e:
                 consecutive_failures += 1
-                if consecutive_failures > 5:
+                if consecutive_failures > 3:
+                    print("[Assistant] ⚠️  Keepalive failed — forcing reconnect")
                     self.session = None
                     return
                 await asyncio.sleep(1)
