@@ -115,6 +115,7 @@ _MUTATING_TOOL_NAMES = frozenset({
     "bluetooth_control", "wifi_control", "calendar_control", "autonomous_control",
     "market_monitor", "daily_briefing", "contact_manager", "taskbar_detect", "full_control",
     "autonomous_brain", "money_makers", "self_evolution", "auto_start", "autonomous_worker",
+    "gumroad_api", "social_media", "content_engine",
 })
 
 _SELF_QUIT_PATTERNS = tuple(re.compile(pattern, re.IGNORECASE) for pattern in (
@@ -2106,6 +2107,67 @@ TOOL_DECLARATIONS = [
             "required": ["action"],
         }
     },
+    {
+        "name": "gumroad_api",
+        "description": (
+            "Gumroad API integration for real payment processing. "
+            "Publish products, check sales, manage listings. "
+            "Requires Gumroad access token (set with 'token' action)."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "enum": ["token", "products", "publish", "sales", "status"],
+                    "description": "Gumroad API action."
+                },
+                "target": {"type": "STRING", "description": "Product ID, access token, or product name."},
+                "value": {"type": "STRING", "description": "Price in cents, description, or additional info."},
+            },
+            "required": ["action"],
+        }
+    },
+    {
+        "name": "social_media",
+        "description": (
+            "Social media posting — real Twitter and Reddit posts. "
+            "Share products, store links, and content. Requires API credentials in config.json."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "enum": ["status", "twitter", "reddit", "share", "log"],
+                    "description": "Social media action."
+                },
+                "target": {"type": "STRING", "description": "Post content or subreddit name."},
+                "value": {"type": "STRING", "description": "Additional post content or options."},
+            },
+            "required": ["action"],
+        }
+    },
+    {
+        "name": "content_engine",
+        "description": (
+            "Content engine — generates real blog posts, tutorials, and marketing content. "
+            "SEO-optimized articles, product descriptions, and social media content."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "enum": ["status", "blog", "tutorial", "comparison", "description", "seo"],
+                    "description": "Content engine action."
+                },
+                "target": {"type": "STRING", "description": "Article topic or product title."},
+                "value": {"type": "STRING", "description": "Features, style, or SEO keywords."},
+            },
+            "required": ["action"],
+        }
+    },
 ]
 
 class JarvisLive:
@@ -2986,6 +3048,21 @@ class JarvisLive:
                 from actions.money_makers import handle as money_makers_handle
                 r = await loop.run_in_executor(None, lambda: money_makers_handle(parameters=args))
                 result = r or "Money makers action completed."
+
+            elif name == "gumroad_api":
+                from actions.gumroad_api import handle as gumroad_api_handle
+                r = await loop.run_in_executor(None, lambda: gumroad_api_handle(parameters=args))
+                result = r or "Gumroad API action completed."
+
+            elif name == "social_media":
+                from actions.social_media import handle as social_media_handle
+                r = await loop.run_in_executor(None, lambda: social_media_handle(parameters=args))
+                result = r or "Social media action completed."
+
+            elif name == "content_engine":
+                from actions.content_engine import handle as content_engine_handle
+                r = await loop.run_in_executor(None, lambda: content_engine_handle(parameters=args))
+                result = r or "Content engine action completed."
 
             elif name == "self_evolution":
                 from actions.self_evolution import handle as self_evolution_handle

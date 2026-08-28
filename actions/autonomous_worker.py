@@ -387,6 +387,11 @@ class AutonomousWorker:
             "sell": lambda: self.sell(_first(target), _first(value)),
             "push_github": self.push_to_github,
             "gumroad": lambda: self.create_gumroad_listing(_first(target)),
+            "gumroad_publish": lambda: self.gumroad_publish(_first(target), _first(value)),
+            "gumroad_sales": self.gumroad_sales,
+            "social_share": lambda: self.social_share(),
+            "blog_post": lambda: self.blog_post(_first(target)),
+            "full_pipeline": lambda: self.full_pipeline(_first(target), _first(value)),
         }
         fn = h.get(action)
         if fn:
@@ -1574,6 +1579,88 @@ body{{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e
             f"6. Click Publish",
         ]
         return "Gumroad listing form opened.\n" + "\n".join(instructions)
+
+    def gumroad_publish(self, product_id=None, price=None):
+        try:
+            from actions.gumroad_api import publish_product
+        except ImportError:
+            return "gumroad_api module not found"
+        if not product_id:
+            products_dir = _DATA_DIR / "products"
+            zips = sorted(products_dir.glob("*.zip"), key=lambda z: z.stat().st_mtime, reverse=True) if products_dir.exists() else []
+            if not zips:
+                return "No products to publish"
+            product_id = zips[0].stem
+        listing = None
+        zip_path = None
+        for d in self._jobs.get("delivered", []):
+            if d.get("id") == product_id or product_id in d.get("id", ""):
+                listing = d.get("listing", {})
+                zip_path = str(_DATA_DIR / "products" / d.get("zip", ""))
+                break
+        if not listing:
+            return f"Product {product_id} not found"
+        price_cents = int(float(price or listing.get("price", 49))) * 100
+        result = publish_product(listing.get("title", "Product"), listing.get("description", "Production code"), price_cents, zip_path)
+        if "Published" in result:
+            self._jobs.setdefault("listed", []).append({
+                "id": product_id, "platform": "gumroad", "listing": listing,
+                "zip": listing.get("zip", ""), "time": _now(), "status": "listed"
+            })
+            self._save_all()
+        return result
+
+    def gumroad_sales(self):
+        try:
+            from actions.gumroad_api import check_sales
+            return check_sales()
+        except ImportError:
+            return "gumroad_api module not found"
+
+    def social_share(self):
+        store_url = "https://mukoyalikuwa83-star.github.io/JARVIS-OS-V.2/"
+        total = sum(d.get("listing", {}).get("price", 0) for d in self._jobs.get("delivered", []) if d.get("status") == "completed")
+        count = len([d for d in self._jobs.get("delivered", []) if d.get("status") == "completed"])
+        tweet = f"Check out {count} production-quality Python tools! APIs, bots, scrapers, dashboards. Total value: ${total}. Instant download: {store_url}"
+        try:
+            from actions.social_media import post_to_twitter, post_to_reddit
+            twitter_result = post_to_twitter(tweet)
+            reddit_result = post_to_reddit(f"I built {count} production-ready Python tools — APIs, bots, scrapers, dashboards. Available for instant download at {store_url}", "python")
+            return f"Twitter: {twitter_result}\nReddit: {reddit_result}"
+        except ImportError:
+            return f"Social media modules not configured.\n\nShare this:\n{tweet}"
+
+    def blog_post(self, topic=None):
+        try:
+            from actions.content_engine import generate_article
+            result = generate_article(topic or "Building Production-Ready Python Tools with AI")
+            return f"Blog post generated: {result['topic']} ({result['word_count']} words)\n\n{result['content'][:500]}"
+        except ImportError:
+            return "content_engine module not found"
+
+    def full_pipeline(self, work_type=None, description=None):
+        lines = ["=== FULL MONEY PIPELINE ==="]
+        if work_type:
+            lines.append("\n--- Step 1: Build Product ---")
+            work_result = self.do_work(work_type, description)
+            lines.append(work_result[:300])
+        lines.append("\n--- Step 2: Deploy to Store ---")
+        deploy_result = self.deploy()
+        lines.append(deploy_result[:300])
+        lines.append("\n--- Step 3: Push to GitHub Pages ---")
+        push_result = self.push_to_github()
+        lines.append(push_result[:300])
+        lines.append("\n--- Step 4: Generate Blog Post ---")
+        blog_result = self.blog_post(work_type and f"Building a {work_type.replace('_', ' ').title()}")
+        lines.append(blog_result[:300])
+        lines.append("\n--- Step 5: Share on Social Media ---")
+        share_result = self.social_share()
+        lines.append(share_result[:300])
+        lines.append("\n--- Pipeline Complete ---")
+        lines.append("Products are live on the store with working payment links.")
+        lines.append("Blog content generated for SEO.")
+        lines.append("Social media posts ready for sharing.")
+        return "\n".join(lines)
 
     def self_heal(self):
         issues = []

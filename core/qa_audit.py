@@ -25,6 +25,7 @@ EXPECTED_TOOLS = {
     "mood_status",
     "screen_awareness", "real_hustle", "autonomous_worker", "account_manager",
     "noise_filter", "instagram_browser", "safe_text_entry", "jarvis_file_stamp",
+    "gumroad_api", "social_media", "content_engine",
 }
 
 
