@@ -4128,10 +4128,14 @@ class JarvisLive:
                 pass
 
     async def _money_making_loop(self):
-        """Autonomous money loop. JARVIS manages all agents, builds products, finds jobs, applies."""
+        """Autonomous money loop. JARVIS builds products, deploys storefront, finds+applies to jobs."""
         import random
         last_full_cycle = 0
-        FULL_CYCLE_INT = 300
+        last_build = 0
+        last_deploy = 0
+        FULL_CYCLE_INT = 180
+        BUILD_INT = 120
+        DEPLOY_INT = 240
         self.ui.write_log("SYS: Autonomous worker online. Making money.")
         while True:
             await asyncio.sleep(30)
@@ -4141,7 +4145,32 @@ class JarvisLive:
             try:
                 loop = asyncio.get_event_loop()
 
-                # Run full brain+worker cycle every 5 minutes
+                # Build a product every 2 minutes
+                if now - last_build > BUILD_INT:
+                    last_build = now
+                    try:
+                        from actions.autonomous_worker import AutonomousWorker
+                        aw = AutonomousWorker()
+                        work_types = ["python_script", "web_scraper", "cli_tool", "flask_api",
+                                      "automation_script", "data_pipeline", "saas_template"]
+                        wt = random.choice(work_types)
+                        result = await loop.run_in_executor(None, lambda: aw.do_work(wt, f"Auto-built {wt}"))
+                        self.ui.write_log(f"SYS: Built {wt}: {str(result)[:60]}")
+                    except Exception as e:
+                        print(f"[Worker] Build error: {e}")
+
+                # Deploy storefront + git push every 4 minutes
+                if now - last_deploy > DEPLOY_INT:
+                    last_deploy = now
+                    try:
+                        from actions.autonomous_worker import AutonomousWorker
+                        aw = AutonomousWorker()
+                        result = await loop.run_in_executor(None, lambda: aw.deploy())
+                        self.ui.write_log(f"SYS: Deploy: {str(result)[:70]}")
+                    except Exception as e:
+                        print(f"[Worker] Deploy error: {e}")
+
+                # Full brain cycle (apply jobs, evolve, research) every 3 minutes
                 if now - last_full_cycle > FULL_CYCLE_INT:
                     last_full_cycle = now
                     try:

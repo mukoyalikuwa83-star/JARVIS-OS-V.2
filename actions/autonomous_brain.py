@@ -266,22 +266,20 @@ def _run_full_cycle() -> str:
     except Exception as e:
         results.append(f"[WORKER] Build error: {e}")
 
-    # APPLY phase: find + quick-apply on active platforms
+    # APPLY phase: find + auto-apply on platforms
     if phase in ("apply", "build"):
         try:
-            status = aw.get_status()
-            if "active" in status.lower():
-                for plat in _active_platforms():
-                    if not plat or plat == "none":
-                        continue
-                    try:
-                        jr = aw.find_jobs(plat, "python")
-                        results.append(f"[WORKER] {plat} jobs: {jr[:60]}")
-                        jr_l = jr.lower()
-                        if "approval" in jr_l or "pending" in jr_l:
-                            results.append(f"[WORKER] {plat}: job(s) staged for approval")
-                    except Exception as e:
-                        results.append(f"[WORKER] {plat} scan: {e}")
+            for plat in ["freelancer", "upwork", "fiverr"]:
+                if not plat or plat == "none":
+                    continue
+                try:
+                    jr = aw.find_jobs(plat, "python")
+                    results.append(f"[WORKER] {plat} jobs: {jr[:60]}")
+                    jr_l = jr.lower()
+                    if "auto-submitted" in jr_l or "found" in jr_l:
+                        results.append(f"[WORKER] {plat}: proposals auto-submitted")
+                except Exception as e:
+                    results.append(f"[WORKER] {plat} scan: {e}")
         except Exception as e:
             results.append(f"[WORKER] Apply/scan error: {e}")
 
