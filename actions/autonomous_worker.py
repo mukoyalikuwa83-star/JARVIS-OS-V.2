@@ -973,13 +973,16 @@ class AutonomousWorker:
         return f"Product created: {name} ({pid}) in {prod_dir}"
 
     def list_products(self):
-        products = self._jobs.get("products", [])
-        if not products:
+        products_dir = _DATA_DIR / "products"
+        if not products_dir.exists():
+            return "No products directory."
+        zips = sorted(products_dir.glob("*.zip"), key=lambda z: z.stat().st_mtime, reverse=True)
+        if not zips:
             return "No products yet."
         lines = []
-        for p in products[-10:]:
-            lines.append(f"  {p['id']}: {p['name']} ({p['type']}) - {p.get('status', '?')}")
-        return f"Products ({len(products)}):\n" + "\n".join(lines)
+        for z in zips[:10]:
+            lines.append(f"  {z.stem}: {z.stat().st_size} bytes")
+        return f"Products ({len(zips)}):\n" + "\n".join(lines)
 
     def get_pending(self):
         pending = [p for p in self._pending if p.get("status") == "pending"]
@@ -1892,13 +1895,14 @@ footer{{text-align:center;padding:30px;color:#444;font-size:0.8em;border-top:1px
         lines.append("  3. Run: prepare_github push")
         if target == "push":
             import subprocess
+            git_cmd = str(Path(r"C:\Program Files\Git\cmd\git.exe"))
             pushed = []
             for p in prepared:
                 repo_path = Path(p["dir"])
                 try:
-                    subprocess.run(["git", "init"], cwd=str(repo_path), capture_output=True, timeout=10)
-                    subprocess.run(["git", "add", "."], cwd=str(repo_path), capture_output=True, timeout=10)
-                    subprocess.run(["git", "commit", "-m", f"Initial release: {p['description'][:50]}"],
+                    subprocess.run([git_cmd, "init"], cwd=str(repo_path), capture_output=True, timeout=10)
+                    subprocess.run([git_cmd, "add", "."], cwd=str(repo_path), capture_output=True, timeout=10)
+                    subprocess.run([git_cmd, "commit", "-m", f"Initial release: {p['description'][:50]}"],
                                    cwd=str(repo_path), capture_output=True, timeout=10)
                     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
                     if token:
@@ -1913,9 +1917,9 @@ footer{{text-align:center;padding:30px;color:#444;font-size:0.8em;border-top:1px
                             resp = urllib.request.urlopen(req, context=_ssl_ctx)
                             repo_data = json.loads(resp.read())
                             remote_url = repo_data.get("clone_url", "")
-                            subprocess.run(["git", "remote", "add", "origin", remote_url],
+                            subprocess.run([git_cmd, "remote", "add", "origin", remote_url],
                                            cwd=str(repo_path), capture_output=True, timeout=10)
-                            subprocess.run(["git", "push", "-u", "origin", "main"],
+                            subprocess.run([git_cmd, "push", "-u", "origin", "main"],
                                            cwd=str(repo_path), capture_output=True, timeout=30)
                             pushed.append(p["repo_name"])
                         except Exception as e:
