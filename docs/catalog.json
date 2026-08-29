@@ -14,6 +14,20 @@
     "download": "downloads/755fbed2.zip"
   },
   {
+    "id": "808842ba",
+    "title": "Discord Bot - Moderation bot",
+    "price": 99,
+    "description": "Moderation bot with economy. Production-quality code. Ready to use, well documented, MIT licensed.",
+    "download": "downloads/808842ba.zip"
+  },
+  {
+    "id": "c405ae00",
+    "title": "Flask REST API - Task manager API: projects, tasks, deadlines",
+    "price": 99,
+    "description": "Task manager API: projects, tasks, deadlines. Complete Flask REST API with user auth, CRUD operations, rate limiting, input validation, tests. Production-ready, deploy anywhere.",
+    "download": "downloads/c405ae00.zip"
+  },
+  {
     "id": "c6430850",
     "title": "Telegram Bot - RSS bot: feeds, news, reminders",
     "price": 89,
@@ -110,6 +124,13 @@
     "price": 49,
     "description": "Production code",
     "download": "downloads/0bae6808.zip"
+  },
+  {
+    "id": "0c405a64",
+    "title": "Product 0c405a64",
+    "price": 49,
+    "description": "Production code",
+    "download": "downloads/0c405a64.zip"
   },
   {
     "id": "0e123547",
