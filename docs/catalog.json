@@ -49,6 +49,13 @@
     "download": "downloads/b54da55f.zip"
   },
   {
+    "id": "90e1952e",
+    "title": "CLI Tool - Auto-built cli_tool",
+    "price": 59,
+    "description": "Auto-built cli_tool. Professional CLI tool with subcommands, persistent config, JSON storage, search, tag filtering. Zero dependencies.",
+    "download": "downloads/90e1952e.zip"
+  },
+  {
     "id": "02393989",
     "title": "Product 02393989",
     "price": 49,
