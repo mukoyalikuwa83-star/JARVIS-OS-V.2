@@ -821,7 +821,14 @@ class AutonomousWorker:
 
         self._add_project_files(work_dir, work_type, description or work_type, files)
         zip_path = self._package_project(work_dir, wid)
-        listing = self._generate_listing(work_type, description or work_type, wid)
+
+        # Use product enricher for better listings
+        try:
+            from actions.product_enricher import enrich_product
+            enriched = enrich_product(wid, zip_path)
+            listing = enriched["listing"]
+        except Exception:
+            listing = self._generate_listing(work_type, description or work_type, wid)
 
         record = {"id": wid, "type": work_type, "desc": description, "files": files,
                   "dir": str(work_dir), "zip": str(zip_path), "time": _now(), "status": "completed",
@@ -1409,6 +1416,10 @@ body{{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e
             "price": c["listing"].get("price", 49),
             "description": c["listing"].get("description", ""),
         } for c in catalog], indent=2), encoding="utf-8")
+        # Also write to docs/index.html for GitHub Pages
+        docs_dir = _DATA_DIR.parent / "docs"
+        docs_dir.mkdir(exist_ok=True)
+        (docs_dir / "index.html").write_text(standalone_html, encoding="utf-8")
         # Auto-commit + push to GitHub
         try:
             import subprocess as _sp
@@ -1469,6 +1480,23 @@ body{{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e
         if url:
             return f"Redeployed! Store: {url}\n{len(catalog)} products, ${total} total"
         return f"Store rebuilt. {len(catalog)} products, ${total}. Run deploy to go live."
+
+    def rebuild_store_with_enricher(self):
+        """Rebuild store with enriched product listings."""
+        try:
+            from actions.product_enricher import enrich_all_products, rebuild_store
+            result = enrich_all_products()
+            html = rebuild_store()
+            docs_dir = _DATA_DIR.parent / "docs"
+            docs_dir.mkdir(exist_ok=True)
+            (docs_dir / "index.html").write_text(html, encoding="utf-8")
+            return (f"Store rebuilt with enricher.\n"
+                    f"Enriched: {result['enriched']} products\n"
+                    f"Skipped: {result['skipped']} products\n"
+                    f"Total: {result['total']} products\n"
+                    f"HTML: {len(html)} bytes")
+        except Exception as e:
+            return f"Enricher error: {e}"
 
     def set_paypal(self, target=None):
         if not target:
