@@ -648,7 +648,7 @@ def rebuild_store():
         l = c["listing"]
         features = l.get("features", ["Production Code", "Well Documented", "MIT License"])
         feat_html = "".join(f'<span class="feat">{f}</span>' for f in features[:6])
-        pay_link = f"https://www.paypal.com/paynow?button=1&item_name={l['title']}&amount={l['price']}&email={paypal_email}"
+        pay_link = f"https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business={paypal_email}&item_name={l['title']}&amount={l['price']}&currency_code=USD"
         download_link = f"https://github.com/mukoyalikuwa83-star/JARVIS-OS-V.2/releases/download/products/{c['id']}.zip"
         items_html += f"""
             <div class="product" data-category="{l.get('category', 'Code')}" id="product-{c['id']}">

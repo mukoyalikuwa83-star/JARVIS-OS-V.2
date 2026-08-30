@@ -102,7 +102,7 @@ _MIC_GAIN_DB = 56
 _MIC_NOISE_GATE_THRESHOLD = 3
 _MIC_AGC_TARGET = 6000
 _MIC_AGC_RATE = 0.08
-_MIC_DEVICE_ID = None  # None = auto-detect working mic
+_MIC_DEVICE_ID = 1  # Microphone (Realtek(R) Audio) - confirmed working
 
 # Tool calls that mutate external state, the UI, or running processes. They are
 # executed strictly in order so later calls always see the effects of earlier ones.
@@ -3435,30 +3435,37 @@ class JarvisLive:
 
             opened = False
             for dev_id in devices_to_try:
-                try:
-                    stream_kwargs = dict(
-                        samplerate=SEND_SAMPLE_RATE,
-                        channels=CHANNELS,
-                        dtype="int16",
-                        blocksize=CHUNK_SIZE,
-                        callback=callback,
-                    )
-                    if dev_id is not None:
-                        stream_kwargs["device"] = dev_id
-                    stream = sd.InputStream(**stream_kwargs)
-                    stream.start()
-                    dev_name = devs[dev_id]['name'] if dev_id is not None and dev_id < len(devs) else "default"
-                    print(f"[Assistant] Mic stream open (device {dev_id}: {dev_name})")
-                    opened = True
+                dev_info = devs[dev_id] if dev_id is not None and dev_id < len(devs) else None
+                native_rate = int(float(dev_info.get('default_samplerate', SEND_SAMPLE_RATE))) if dev_info else SEND_SAMPLE_RATE
+                rates_to_try = [native_rate, SEND_SAMPLE_RATE, 44100, 48000]
+                rates_to_try = list(dict.fromkeys(rates_to_try))
+                for try_rate in rates_to_try:
                     try:
-                        while not self._shutdown_requested.is_set():
-                            await asyncio.sleep(0.1)
-                    finally:
-                        stream.stop()
-                        stream.close()
+                        stream_kwargs = dict(
+                            samplerate=try_rate,
+                            channels=CHANNELS,
+                            dtype="int16",
+                            blocksize=CHUNK_SIZE,
+                            callback=callback,
+                        )
+                        if dev_id is not None:
+                            stream_kwargs["device"] = dev_id
+                        stream = sd.InputStream(**stream_kwargs)
+                        stream.start()
+                        dev_name = dev_info['name'] if dev_info else "default"
+                        print(f"[Assistant] Mic stream open (device {dev_id}: {dev_name}, {try_rate}Hz)")
+                        opened = True
+                        try:
+                            while not self._shutdown_requested.is_set():
+                                await asyncio.sleep(0.1)
+                        finally:
+                            stream.stop()
+                            stream.close()
+                        break
+                    except Exception:
+                        continue
+                if opened:
                     break
-                except Exception:
-                    continue
 
             if not opened:
                 print("[Assistant] Could not open any microphone. Running without mic.")

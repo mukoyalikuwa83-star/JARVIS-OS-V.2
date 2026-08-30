@@ -1329,7 +1329,7 @@ class AutonomousWorker:
             wt = l.get("category", "").lower().replace(" ", "_")
             feats = features_map.get(wt, ["Production Code", "Well Documented", "MIT License"])
             feat_html = "".join(f'<span class="feat">{f}</span>' for f in feats[:6])
-            pay_link = f"https://www.paypal.com/paynow?button=1&item_name={l['title']}&amount={l['price']}&email={paypal_email}"
+            pay_link = f"https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business={paypal_email}&item_name={l['title']}&amount={l['price']}&currency_code=USD"
             download_link = f"https://github.com/mukoyalikuwa83-star/JARVIS-OS-V.2/releases/download/products/{c['id']}.zip"
             items_html += f"""
             <div class="product" id="product-{c['id']}">
