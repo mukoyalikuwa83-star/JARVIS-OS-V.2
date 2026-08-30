@@ -1295,13 +1295,7 @@ class AutonomousWorker:
         if not catalog:
             return "No products to deploy"
         config = _load(_DATA_DIR / "config.json", {})
-        paypal_username = target or config.get("paypal_link", "")
-        if not paypal_username:
-            paypal_username = "yourpaypal"
-        if "paypal.me/" in paypal_username:
-            paypal_username = paypal_username.split("paypal.me/", 1)[1].split("/")[0]
-        elif "paypal.com/" in paypal_username:
-            paypal_username = paypal_username.split("paypal.com/paypalme/", 1)[1].split("/")[0]
+        paypal_email = config.get("paypal_email", "mukoyalikuwa07@gmail.com")
         total = sum(c["listing"].get("price", 0) for c in catalog)
         features_map = {
             "flask_api": ["JWT Authentication", "CRUD Endpoints", "Rate Limiting", "Input Validation", "Tests Included", "Production Ready"],
@@ -1328,7 +1322,7 @@ class AutonomousWorker:
             wt = l.get("category", "").lower().replace(" ", "_")
             feats = features_map.get(wt, ["Production Code", "Well Documented", "MIT License"])
             feat_html = "".join(f'<span class="feat">{f}</span>' for f in feats[:6])
-            pay_link = f"https://paypal.me/{paypal_username}/{l['price']}"
+            pay_link = f"https://www.paypal.com/paynow?button=1&item_name={l['title']}&amount={l['price']}&email={paypal_email}"
             download_link = f"https://github.com/mukoyalikuwa83-star/JARVIS-OS-V.2/releases/download/products/{c['id']}.zip"
             items_html += f"""
             <div class="product" id="product-{c['id']}">
@@ -1478,19 +1472,16 @@ body{{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e
 
     def set_paypal(self, target=None):
         if not target:
-            return "Provide your PayPal.me link: set_paypal yourpaypal"
-        username = target
-        if "paypal.me/" in target:
-            username = target.split("paypal.me/", 1)[1].split("/")[0]
-        elif "paypal.com/" in target:
-            username = target.split("paypal.com/paypalme/", 1)[1].split("/")[0]
+            return "Provide your PayPal email: set_paypal you@example.com"
+        email = target.strip()
         config_file = _DATA_DIR / "config.json"
         config = {}
         if config_file.exists():
             config = json.loads(config_file.read_text(encoding="utf-8"))
-        config["paypal_link"] = username
+        config["paypal_email"] = email
+        config["paypal_link"] = email
         config_file.write_text(json.dumps(config, indent=2), encoding="utf-8")
-        return f"PayPal link set: {username}. All buy buttons will use this."
+        return f"PayPal email set: {email}. All buy buttons will use email payment links."
 
     def push_to_github(self):
         repo_dir = Path(__file__).resolve().parent.parent
