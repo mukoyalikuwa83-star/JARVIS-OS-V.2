@@ -1827,6 +1827,13 @@
     "download": "downloads/02d64c0d.zip"
   },
   {
+    "id": "04f327c5",
+    "title": "CLI Tool - File organizer",
+    "price": 59,
+    "description": "Professional CLI tool with JSON support, CLI interface. Zero dependencies.",
+    "download": "downloads/04f327c5.zip"
+  },
+  {
     "id": "0783978e",
     "title": "CLI Tool - Landing page with pricing and testimonials",
     "price": 59,
