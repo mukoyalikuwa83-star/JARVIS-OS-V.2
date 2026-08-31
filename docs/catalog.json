@@ -1792,6 +1792,13 @@
     "download": "downloads/ff30e953.zip"
   },
   {
+    "id": "ffeef120",
+    "title": "ETL Pipeline - Auto-built data_pipeline",
+    "price": 79,
+    "description": "Production ETL pipeline with CSV support, JSON support. Config-driven.",
+    "download": "downloads/ffeef120.zip"
+  },
+  {
     "id": "24adea54",
     "title": "Data Analysis Tool - Analytics dashboard with real-time charts",
     "price": 69,
@@ -1930,6 +1937,13 @@
     "price": 59,
     "description": "Professional CLI tool with AI integration, JSON support, CLI interface. Zero dependencies.",
     "download": "downloads/39d8404a.zip"
+  },
+  {
+    "id": "3b4944e2",
+    "title": "CLI Tool - E-commerce price tracker",
+    "price": 59,
+    "description": "Professional CLI tool with AI integration, CSV support, JSON support, CLI interface. Zero dependencies.",
+    "download": "downloads/3b4944e2.zip"
   },
   {
     "id": "43c80faf",
@@ -2168,6 +2182,13 @@
     "price": 59,
     "description": "Professional CLI tool with JSON support, CLI interface. Zero dependencies.",
     "download": "downloads/aa3e0b3f.zip"
+  },
+  {
+    "id": "aa9289cb",
+    "title": "CLI Tool - File organizer: rules, folders",
+    "price": 59,
+    "description": "Professional CLI tool with AI integration, CSV support, JSON support, CLI interface. Zero dependencies.",
+    "download": "downloads/aa9289cb.zip"
   },
   {
     "id": "ade2b779",
