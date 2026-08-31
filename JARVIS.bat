@@ -1,27 +1,12 @@
 @echo off
-title JARVIS OS V.2 - Autonomous AI Assistant
+title JARVIS-OS V.2
 cd /d "C:\Users\2025\OneDrive\Desktop\JARVIS-OS-V.2-main\JARVIS-OS-V.2-main"
-call .venv\Scripts\activate.bat
-set PYTHONIOENCODING=utf-8
-set PYTHONLEGACYWINDOWSSTDIO=utf-8
-
-rem Clear any intentional-stop marker so a manual launch always starts
-del /f /q ".jarvis\.stop" >nul 2>&1
 
 :restart
-rem Respect an intentional shutdown marker
-if exist ".jarvis\.stop" (
-    echo Intentional shutdown detected. Staying off.
-    del /f /q ".jarvis\.stop" >nul 2>&1
-    exit /b 0
-)
-echo ============================================
-echo   JARVIS OS V.2 - Starting...
-echo   %date% %time%
-echo ============================================
-python main.py
-echo.
-echo JARVIS exited with code %ERRORLEVEL%.
-echo Restarting in 3 seconds...
+if exist ".jarvis\.stop" del ".jarvis\.stop"
+echo [%date% %time%] Starting JARVIS-OS V.2...
+set JARVIS_AUTO_START=1
+".venv\Scripts\python.exe" main.py
+echo [%date% %time%] JARVIS exited. Restarting in 3 seconds...
 timeout /t 3 /nobreak >nul
 goto restart
