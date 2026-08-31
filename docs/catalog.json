@@ -427,6 +427,13 @@
     "download": "downloads/86a53674.zip"
   },
   {
+    "id": "87808029",
+    "title": "Flask REST API - backend with auth, CRUD, rate limiting.",
+    "price": 119,
+    "description": "Complete Flask REST API with user authentication, rate limiting, CRUD operations, AI integration, JSON support. Production-ready, deploy anywhere.",
+    "download": "downloads/87808029.zip"
+  },
+  {
     "id": "888f48f3",
     "title": "Flask REST API - backend with auth, CRUD, rate limiting.",
     "price": 119,
@@ -2350,6 +2357,13 @@
     "price": 59,
     "description": "Professional CLI tool with AI integration, CSV support, JSON support, CLI interface. Zero dependencies.",
     "download": "downloads/f76e3135.zip"
+  },
+  {
+    "id": "f8b1d2b4",
+    "title": "CLI Tool - Auto-built automation_script",
+    "price": 59,
+    "description": "Professional CLI tool with AI integration, CSV support, JSON support, CLI interface. Zero dependencies.",
+    "download": "downloads/f8b1d2b4.zip"
   },
   {
     "id": "f91fa764",
