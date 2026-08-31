@@ -294,6 +294,13 @@
     "download": "downloads/4d18f61c.zip"
   },
   {
+    "id": "4dae1719",
+    "title": "Flask REST API - backend with auth, CRUD, rate limiting.",
+    "price": 119,
+    "description": "Complete Flask REST API with user authentication, rate limiting, CRUD operations, AI integration, JSON support. Production-ready, deploy anywhere.",
+    "download": "downloads/4dae1719.zip"
+  },
+  {
     "id": "50db3893",
     "title": "Flask REST API - Test API for verification",
     "price": 119,
