@@ -2282,6 +2282,13 @@
     "download": "downloads/bc54a4f1.zip"
   },
   {
+    "id": "c1e5ee4b",
+    "title": "CLI Tool - File organizer",
+    "price": 59,
+    "description": "Professional CLI tool with JSON support, CLI interface. Zero dependencies.",
+    "download": "downloads/c1e5ee4b.zip"
+  },
+  {
     "id": "c5626157",
     "title": "CLI Tool - Maps integration: geocode, routes",
     "price": 59,
