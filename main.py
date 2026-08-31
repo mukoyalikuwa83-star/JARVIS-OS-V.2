@@ -2592,9 +2592,19 @@ class JarvisLive:
             )
             parts.append(mood_ctx)
 
+        voice = self._get_current_voice()
         return types.LiveConnectConfig(
             system_instruction="\n".join(parts),
             tools=[{"function_declarations": TOOL_DECLARATIONS}],
+            response_modalities=["AUDIO"],
+            output_audio_transcription={},
+            speech_config=types.SpeechConfig(
+                voice_config=types.VoiceConfig(
+                    prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                        voice_name=voice
+                    )
+                )
+            ),
             realtime_input_config=types.RealtimeInputConfig(
                 automatic_activity_detection={
                     "silence_duration_ms": LIVE_VAD_SILENCE_MS,
