@@ -95,13 +95,13 @@ SELF_QUIT_GOODBYE = (
     "Until next time."
 )
 
-LIVE_VAD_SILENCE_MS = 150
+LIVE_VAD_SILENCE_MS = 120
 _LIVE_RECONNECT_MAX_DELAY = 5.0
 _LIVE_KEEPALIVE_INTERVAL = 15.0
-_MIC_GAIN_DB = 56
-_MIC_NOISE_GATE_THRESHOLD = 3
-_MIC_AGC_TARGET = 6000
-_MIC_AGC_RATE = 0.08
+_MIC_GAIN_DB = 65
+_MIC_NOISE_GATE_THRESHOLD = 2
+_MIC_AGC_TARGET = 8000
+_MIC_AGC_RATE = 0.12
 _MIC_DEVICE_ID = 1  # Microphone (Realtek(R) Audio) - confirmed working
 
 # Tool calls that mutate external state, the UI, or running processes. They are
@@ -2212,7 +2212,7 @@ class JarvisLive:
         self._barge_in_event = threading.Event()
         self._last_barge_in_time = 0.0
         self._playback_started_at = 0.0
-        self._barge_in_grace_ms = 1.5
+        self._barge_in_grace_ms = 0.8
         self._playback_energy = 0.0
         self._mic_energy_level = 0.0
         self._mic_energy_lock = threading.Lock()
@@ -2249,7 +2249,7 @@ class JarvisLive:
         if self._is_speaking:
             with self._mic_energy_lock:
                 mic_level = self._mic_energy_level
-            if mic_level > 800 / 32768.0:
+            if mic_level > 400 / 32768.0:
                 self._user_is_addressing_jarvis = True
                 return "barge_in"
         time_since_speech = time.monotonic() - self._last_user_speech_at if self._last_user_speech_at else 999
@@ -2257,10 +2257,6 @@ class JarvisLive:
             return "follow_up"
         self._user_is_addressing_jarvis = False
         return "ambient"
-        time_since_speech = time.monotonic() - self._last_user_speech_at if self._last_user_speech_at else 999
-        if time_since_speech < 3.0:
-            return "follow_up"
-        self._user_is_addressing_jarvis = False
         return "ambient"
 
     def get_mood_status(self) -> dict:
@@ -3923,20 +3919,20 @@ class JarvisLive:
         last_cpu_check = 0
         last_msg_check = 0
         last_cal_check = 0
-        BATTERY_INTERVAL = 300
-        HEALTH_INTERVAL = 600
-        NETWORK_INTERVAL = 900
-        CPU_INTERVAL = 120
-        MSG_CHECK_INTERVAL = 60
-        CAL_CHECK_INTERVAL = 300
-        CTX_CHECK_INTERVAL = 120
+        BATTERY_INTERVAL = 120
+        HEALTH_INTERVAL = 300
+        NETWORK_INTERVAL = 600
+        CPU_INTERVAL = 60
+        MSG_CHECK_INTERVAL = 30
+        CAL_CHECK_INTERVAL = 120
+        CTX_CHECK_INTERVAL = 60
         low_battery_warned = False
         _prev_msg_apps: set[str] = set()
         _last_cal_alert_time = 0.0
         last_ctx_check = 0.0
 
         while True:
-            await asyncio.sleep(30)
+            await asyncio.sleep(15)
             if self._shutdown_requested.is_set():
                 return
             now = time.time()
@@ -4140,12 +4136,12 @@ class JarvisLive:
         last_full_cycle = 0
         last_build = 0
         last_deploy = 0
-        FULL_CYCLE_INT = 180
-        BUILD_INT = 120
-        DEPLOY_INT = 240
+        FULL_CYCLE_INT = 90
+        BUILD_INT = 60
+        DEPLOY_INT = 120
         self.ui.write_log("SYS: Autonomous worker online. Making money.")
         while True:
-            await asyncio.sleep(30)
+            await asyncio.sleep(15)
             if self._shutdown_requested.is_set():
                 return
             now = time.time()

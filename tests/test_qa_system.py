@@ -320,7 +320,7 @@ class QAModeSafetyTests(unittest.TestCase):
 
         detection = config.realtime_input_config.automatic_activity_detection
         self.assertEqual(detection.silence_duration_ms, main.LIVE_VAD_SILENCE_MS)
-        self.assertEqual(main.LIVE_VAD_SILENCE_MS, 150)
+        self.assertEqual(main.LIVE_VAD_SILENCE_MS, 120)
 
 
 class QAReportTests(unittest.TestCase):
