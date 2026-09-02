@@ -20,8 +20,25 @@ warnings.filterwarnings("ignore", message=".*numpy array.*")
 
 # sounddevice deferred to JarvisLive.__init__ for faster startup
 sd = None
-from google import genai
-from google.genai import types
+
+# Handle pydantic version conflicts gracefully
+try:
+    from google import genai
+    from google.genai import types
+except ImportError as _import_err:
+    if "WrapValidator" in str(_import_err) or "pydantic" in str(_import_err):
+        try:
+            import subprocess, sys as _sys
+            _sys.stdout.write("Fixing pydantic version...\n")
+            subprocess.run([_sys.executable, "-m", "pip", "install", "--force-reinstall", "pydantic==2.13.5", "--index-url", "https://mirrors.aliyun.com/pypi/simple/", "--trusted-host", "mirrors.aliyun.com", "--quiet"], capture_output=True, timeout=120)
+            from google import genai
+            from google.genai import types
+        except Exception:
+            genai = None
+            types = None
+    else:
+        genai = None
+        types = None
 
 def _qt_message_handler(mode, context, message):
     if "font" in message.lower() or "opentype" in message.lower():
