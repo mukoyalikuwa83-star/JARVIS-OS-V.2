@@ -63,6 +63,16 @@ def _global_exception_hook(exc_type, exc_value, exc_tb):
     sys.stderr.flush()
 sys.excepthook = _global_exception_hook
 
+import signal as _signal
+def _signal_handler(signum, frame):
+    print(f"\n[SIGNAL] Received signal {signum}, shutting down...")
+    sys.exit(0)
+for _sig in (_signal.SIGTERM, _signal.SIGINT):
+    try:
+        _signal.signal(_sig, _signal_handler)
+    except (OSError, ValueError):
+        pass
+
 def _async_exception_hook(loop, context):
     """Catch unhandled async exceptions that would silently kill the event loop."""
     import traceback as _tb
