@@ -1313,13 +1313,13 @@ class CompactModeWidget(QWidget):
         r = min(W, H) / 2 - 4
 
         # Background circle
-        p.setPen(Qt.PenStyle.NoPen)
+        p.setPen(QPen(Qt.PenStyle.NoPen))
         p.setBrush(QBrush(qcol(C.DARK, 220)))
         p.drawEllipse(QPointF(cx, cy), r, r)
 
         # Outer ring
         p.setPen(QPen(qcol(C.PRI, 120), 2))
-        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.setBrush(QBrush(Qt.BrushStyle.NoBrush))
         p.drawEllipse(QPointF(cx, cy), r, r)
 
         # Rotating arcs
@@ -1337,7 +1337,7 @@ class CompactModeWidget(QWidget):
         glow_a = 180 if is_active else 80
         grad.setColorAt(0, qcol(C.ENERGY, glow_a))
         grad.setColorAt(1, qcol(C.PRI, 0))
-        p.setPen(Qt.PenStyle.NoPen)
+        p.setPen(QPen(Qt.PenStyle.NoPen))
         p.setBrush(QBrush(grad))
         p.drawEllipse(QPointF(cx, cy), core_r, core_r)
 
@@ -1347,7 +1347,7 @@ class CompactModeWidget(QWidget):
             "THINKING": C.ACC, "PROCESSING": C.PURPLE,
         }.get(self._state, C.TEXT_DIM)
         p.setBrush(QBrush(qcol(state_col)))
-        p.setPen(Qt.PenStyle.NoPen)
+        p.setPen(QPen(Qt.PenStyle.NoPen))
         p.drawEllipse(QPointF(cx, cy + r - 10), 4, 4)
 
     def mousePressEvent(self, event):
@@ -2425,7 +2425,7 @@ class HudCanvas(QWidget):
 
             # Draw as full ellipse for scale
             p.setPen(QPen(qcol(C.PRI,a), w))
-            p.setBrush(Qt.BrushStyle.NoBrush)
+            p.setBrush(QBrush(Qt.BrushStyle.NoBrush))
             p.drawEllipse(QPointF(cx + ox, cy + oy), r, r * 0.32)
 
             # Tick marks on the largest ring
@@ -2460,7 +2460,7 @@ class HudCanvas(QWidget):
             a = max(0, int(self._brightness * 25 * pulse))
             if a < 2:
                 continue
-            p.setPen(Qt.PenStyle.NoPen)
+            p.setPen(QPen(Qt.PenStyle.NoPen))
             p.setBrush(QBrush(qcol(C.PRI,a)))
             p.drawEllipse(QPointF(sx, sy), sz, sz)
 
@@ -2482,7 +2482,7 @@ class HudCanvas(QWidget):
             a = max(0, int(self._brightness * 40 * (1.0 - dist * 0.6) * self._wave_opacity))
             if a < 2:
                 continue
-            p.setPen(Qt.PenStyle.NoPen)
+            p.setPen(QPen(Qt.PenStyle.NoPen))
             p.setBrush(QBrush(qcol(C.PRI,a)))
             p.drawEllipse(QPointF(wx, wy), 0.6, 0.6)
 
@@ -2501,7 +2501,7 @@ class HudCanvas(QWidget):
             # Main hex lines
             hex_col = qcol(C.PRI,hex_a)
             p.setPen(QPen(hex_col, 1.2))
-            p.setBrush(Qt.BrushStyle.NoBrush)
+            p.setBrush(QBrush(Qt.BrushStyle.NoBrush))
             hex_path = QPainterPath()
             hex_path.moveTo(hex_pts[0])
             for hp in hex_pts[1:]:
@@ -2542,7 +2542,7 @@ class HudCanvas(QWidget):
             # Vertex dots — bright
             for hp in hex_pts:
                 # Vertex glow
-                p.setPen(Qt.PenStyle.NoPen)
+                p.setPen(QPen(Qt.PenStyle.NoPen))
                 p.setBrush(QBrush(qcol(C.ENERGY,max(0, int(hex_a * 0.3)))))
                 p.drawEllipse(hp, 8, 8)
                 # Vertex core
@@ -2663,7 +2663,7 @@ class HudCanvas(QWidget):
                 continue
 
             col = qcol(C.ENERGY,r_a)
-            p.setBrush(Qt.BrushStyle.NoBrush)
+            p.setBrush(QBrush(Qt.BrushStyle.NoBrush))
 
             path_pts = []
             for deg in range(0, 361, 3):
@@ -2741,7 +2741,7 @@ class HudCanvas(QWidget):
                 pa = max(0, min(255, int(220 * depth * (1.0 - abs(t - 0.5) * 1.5))))
                 if pa > 5:
                     col = pulse_colors[cidx % len(pulse_colors)]
-                    p.setPen(Qt.PenStyle.NoPen)
+                    p.setPen(QPen(Qt.PenStyle.NoPen))
                     gc = QColor(col); gc.setAlpha(int(pa * 0.2))
                     p.setBrush(QBrush(gc))
                     p.drawEllipse(QPointF(px, py), 14, 14)
@@ -2784,7 +2784,7 @@ class HudCanvas(QWidget):
 
             ga = max(0, int(a * 0.18))
             if ga > 2:
-                p.setPen(Qt.PenStyle.NoPen)
+                p.setPen(QPen(Qt.PenStyle.NoPen))
                 p.setBrush(QBrush(QColor(cr, cg, cb, ga)))
                 p.drawEllipse(QPointF(sx, sy), draw_sz * 5, draw_sz * 5)
 
@@ -2808,7 +2808,7 @@ class HudCanvas(QWidget):
             a = max(0, min(255, int(self._brightness * depth * pulse * 200)))
             if a < 4:
                 continue
-            p.setPen(Qt.PenStyle.NoPen)
+            p.setPen(QPen(Qt.PenStyle.NoPen))
             p.setBrush(QBrush(qcol(C.ENERGY,a)))
             p.drawEllipse(QPointF(sx, sy), sz * pulse, sz * pulse)
 
@@ -2851,7 +2851,7 @@ class HudCanvas(QWidget):
             frc = i / 18
             r = core_base * frc * 7.0
             a = int(ca * 0.05 * frc)
-            p.setPen(Qt.PenStyle.NoPen)
+            p.setPen(QPen(Qt.PenStyle.NoPen))
             p.setBrush(QBrush(qcol(C.PRI,a)))
             p.drawEllipse(QPointF(cx, cy), r, r)
 
@@ -2868,7 +2868,7 @@ class HudCanvas(QWidget):
             ring_a = max(0, int(ca * 0.25 * (1.0 - sr / (core_base * 5.0))))
             if ring_a > 2:
                 p.setPen(QPen(qcol(C.ENERGY,ring_a), 0.6))
-                p.setBrush(Qt.BrushStyle.NoBrush)
+                p.setBrush(QBrush(Qt.BrushStyle.NoBrush))
                 p.drawEllipse(QPointF(cx, cy), sr, sr)
 
         # Inner core — intense
@@ -2876,7 +2876,7 @@ class HudCanvas(QWidget):
             frc = i / 5
             r = core_base * frc * 2.0
             a = int(ca * 0.55 * frc)
-            p.setPen(Qt.PenStyle.NoPen)
+            p.setPen(QPen(Qt.PenStyle.NoPen))
             p.setBrush(QBrush(qcol(C.ENERGY,a)))
             p.drawEllipse(QPointF(cx, cy), r, r)
 
@@ -2919,7 +2919,7 @@ class HudCanvas(QWidget):
 
         for bx, by, dx, dy in [(hl,ht,1,1),(hr,ht,-1,1),(hl,hb,1,-1),(hr,hb,-1,-1)]:
             # Ambient glow
-            p.setPen(Qt.PenStyle.NoPen)
+            p.setPen(QPen(Qt.PenStyle.NoPen))
             p.setBrush(QBrush(qcol(C.PRI,max(0, int(self._brightness * 15)))))
             p.drawEllipse(QPointF(bx + dx * bl * 0.35, by + dy * bl * 0.35), bl * 0.5, bl * 0.5)
 
@@ -2938,7 +2938,7 @@ class HudCanvas(QWidget):
             # Corner dot — pulsing
             _corner_pulse = 0.5 + 0.5 * math.sin(self._tick * 0.08 + bx * 0.01 + by * 0.01)
             _corner_a = int(120 + 80 * _corner_pulse)
-            p.setPen(Qt.PenStyle.NoPen)
+            p.setPen(QPen(Qt.PenStyle.NoPen))
             p.setBrush(QBrush(qcol(C.ENERGY,_corner_a)))
             p.drawEllipse(QPointF(bx + dx * 4, by + dy * 4), 2.5 + _corner_pulse, 2.5 + _corner_pulse)
 
@@ -3169,7 +3169,7 @@ class MetricBar(QWidget):
         fill_w  = int(bar_w * self._value / 100)
 
         p.setBrush(QBrush(qcol(C.BAR_BG)))
-        p.setPen(Qt.PenStyle.NoPen)
+        p.setPen(QPen(Qt.PenStyle.NoPen))
         p.drawRoundedRect(QRectF(bar_x, bar_y, bar_w, bar_h), 2, 2)
 
         if self._value > 85:
@@ -3909,7 +3909,7 @@ class AIActivityCanvas(QWidget):
                 t = pkt[1]
                 px = (ni[0] + (nj[0] - ni[0]) * t) * W
                 py = y0 + (ni[1] + (nj[1] - ni[1]) * t) * H
-                p.setPen(Qt.PenStyle.NoPen)
+                p.setPen(QPen(Qt.PenStyle.NoPen))
                 p.setBrush(QBrush(qcol(node_col, 220)))
                 p.drawEllipse(QPointF(px, py), 3, 3)
 
@@ -3929,7 +3929,7 @@ class AIActivityCanvas(QWidget):
                 for gi in range(4):
                     gr = r_base + gi * 2.5
                     ga = max(0, int(60 * pulse * (1 - gi / 4)))
-                    p.setPen(Qt.PenStyle.NoPen)
+                    p.setPen(QPen(Qt.PenStyle.NoPen))
                     p.setBrush(QBrush(qcol(node_col, ga)))
                     p.drawEllipse(QPointF(nx, ny), gr, gr)
                 # Core
@@ -3956,7 +3956,7 @@ class AIActivityCanvas(QWidget):
                     r = (t + ri / 3) * min(W, H) * 0.3
                     a = max(0, int(120 * (1 - (t + ri / 3))))
                     p.setPen(QPen(qcol(C.PURPLE, a), 1))
-                    p.setBrush(Qt.BrushStyle.NoBrush)
+                    p.setBrush(QBrush(Qt.BrushStyle.NoBrush))
                     p.drawEllipse(QPointF(hx, hy), r, r)
 
         elif mode == "analyzing" and self.config.show_scanner:
@@ -4551,7 +4551,7 @@ class _DropCanvas(QWidget):
         rect = QRectF(pad, pad, W - pad * 2, H - pad * 2)
 
         bg_col = qcol(C.BORDER_A if z._drag_over else (C.DARK2 if z._hovering else C.PANEL))
-        p.setBrush(QBrush(bg_col)); p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QBrush(bg_col)); p.setPen(QPen(Qt.PenStyle.NoPen))
         p.drawRoundedRect(rect, 6, 6)
 
         if z._current_file:   border_col = qcol(C.GREEN, 200)
@@ -4561,7 +4561,7 @@ class _DropCanvas(QWidget):
 
         pen = QPen(border_col, 1.5, Qt.PenStyle.DashLine)
         pen.setDashOffset(z._dash_offset)
-        p.setPen(pen); p.setBrush(Qt.BrushStyle.NoBrush)
+        p.setPen(pen); p.setBrush(QBrush(Qt.BrushStyle.NoBrush))
         p.drawRoundedRect(rect, 6, 6)
 
         if z._current_file:   self._paint_file(p, W, H)
@@ -4571,7 +4571,7 @@ class _DropCanvas(QWidget):
     def _paint_idle(self, p, W, H, hover):
         cx, cy = W / 2, H / 2
         col = qcol(C.PRI_DIM if not hover else C.PRI)
-        p.setPen(QPen(col, 2)); p.setBrush(Qt.BrushStyle.NoBrush)
+        p.setPen(QPen(col, 2)); p.setBrush(QBrush(Qt.BrushStyle.NoBrush))
         p.drawLine(QPointF(cx, cy - 14), QPointF(cx, cy + 4))
         p.drawLine(QPointF(cx - 8, cy - 6), QPointF(cx, cy - 14))
         p.drawLine(QPointF(cx + 8, cy - 6), QPointF(cx, cy - 14))
@@ -6236,7 +6236,7 @@ class _SubtitleWidget(QWidget):
 
         # Semi-transparent background panel for readability
         _bg_col = QColor(0, 5, 12, int(160 * self._opacity))
-        p.setPen(Qt.PenStyle.NoPen)
+        p.setPen(QPen(Qt.PenStyle.NoPen))
         p.setBrush(QBrush(_bg_col))
         _r = self.rect().adjusted(4, 2, -4, -2)
         _rr = 6
@@ -6244,7 +6244,7 @@ class _SubtitleWidget(QWidget):
 
         # Semi-transparent background panel for readability
         _bg_col = QColor(0, 5, 12, int(160 * self._opacity))
-        p.setPen(Qt.PenStyle.NoPen)
+        p.setPen(QPen(Qt.PenStyle.NoPen))
         p.setBrush(QBrush(_bg_col))
         _r = self.rect().adjusted(4, 2, -4, -2)
         _rr = 6

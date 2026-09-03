@@ -730,7 +730,12 @@ def _windows_pyautogui_type_and_enter(message: str) -> str:
         import pyautogui
         import time
         time.sleep(0.3)
-        pyperclip.copy(message)
+        for attempt in range(3):
+            try:
+                pyperclip.copy(message)
+                break
+            except Exception:
+                time.sleep(0.1)
         pyautogui.hotkey("ctrl", "v")
         time.sleep(0.15)
         pyautogui.press("enter")

@@ -790,8 +790,14 @@ def _set_clipboard(text: str) -> str:
     except Exception:
         try:
             import pyperclip
-            pyperclip.copy(text)
-            return f"Clipboard set: {text[:60]}{'...' if len(text) > 60 else ''}"
+            import time
+            for attempt in range(3):
+                try:
+                    pyperclip.copy(text)
+                    return f"Clipboard set: {text[:60]}{'...' if len(text) > 60 else ''}"
+                except Exception:
+                    time.sleep(0.1)
+            return f"Clipboard set failed after retries"
         except Exception as e:
             return f"Clipboard error: {e}"
 

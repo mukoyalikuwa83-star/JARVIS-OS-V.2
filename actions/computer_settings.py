@@ -377,7 +377,12 @@ def type_text(text: str, press_enter_after: bool = False):
     if not text:
         return
     if _PYPERCLIP:
-        pyperclip.copy(str(text))
+        for attempt in range(3):
+            try:
+                pyperclip.copy(str(text))
+                break
+            except Exception:
+                time.sleep(0.1)
         time.sleep(0.15)
         paste()
     else:

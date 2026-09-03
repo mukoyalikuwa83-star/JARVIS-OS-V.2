@@ -28,12 +28,15 @@ _DATA_DIR.mkdir(exist_ok=True)
 
 
 def _safe_clipboard_copy(text: str) -> bool:
-    try:
-        pyperclip.copy(text)
-        return True
-    except Exception as e:
-        log.warning("pyperclip.copy failed: %s", e)
-        return False
+    import time
+    for attempt in range(3):
+        try:
+            pyperclip.copy(text)
+            return True
+        except Exception as e:
+            log.warning("pyperclip.copy failed (attempt %d): %s", attempt + 1, e)
+            time.sleep(0.1)
+    return False
 
 
 def _safe_clipboard_paste() -> str:
