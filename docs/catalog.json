@@ -54,6 +54,12 @@
     "description": "Complete Flask REST API with user authentication, rate limiting, CRUD operations, AI integration, JSON support. Production-ready, deploy anywhere."
   },
   {
+    "id": "0fce4fd7",
+    "title": "Flask REST API - Auto-built flask_api",
+    "price": 119,
+    "description": "Complete Flask REST API with user authentication, rate limiting, CRUD operations, AI integration, JSON support. Production-ready, deploy anywhere."
+  },
+  {
     "id": "104c88de",
     "title": "Flask REST API - backend with auth, CRUD, rate limiting.",
     "price": 119,
@@ -1084,6 +1090,12 @@
     "title": "Flask REST API - DevOps CLI with deployment automation",
     "price": 99,
     "description": "Complete Flask REST API with user authentication, AI integration, JSON support, Flask web framework. Production-ready, deploy anywhere."
+  },
+  {
+    "id": "397eb122",
+    "title": "Flask REST API - Analytics dashboard: campaigns, funnels",
+    "price": 99,
+    "description": "Complete Flask REST API with user authentication, AI integration, CSV support, JSON support, Flask web framework. Production-ready, deploy anywhere."
   },
   {
     "id": "39fcf04c",
@@ -2118,6 +2130,12 @@
     "description": "Production ETL pipeline with CSV support, JSON support. Config-driven."
   },
   {
+    "id": "fac49d55",
+    "title": "ETL Pipeline - Streaming alerts: real-time",
+    "price": 79,
+    "description": "Production ETL pipeline with CSV support, JSON support. Config-driven."
+  },
+  {
     "id": "fdabafdb",
     "title": "ETL Pipeline - Analytics pipeline with events",
     "price": 79,
@@ -2244,6 +2262,12 @@
     "description": "Professional CLI tool with AI integration, JSON support, CLI interface. Zero dependencies."
   },
   {
+    "id": "1a0ace95",
+    "title": "CLI Tool - Notifications hub: push, email",
+    "price": 59,
+    "description": "Professional CLI tool with user authentication, rate limiting, AI integration, JSON support. Zero dependencies."
+  },
+  {
     "id": "1b84b851",
     "title": "CLI Tool - Auto-built web_scraper",
     "price": 59,
@@ -2328,6 +2352,12 @@
     "description": "Professional CLI tool with AI integration, CSV support, JSON support, CLI interface. Zero dependencies."
   },
   {
+    "id": "2dcd5511",
+    "title": "CLI Tool - Auto-built automation_script",
+    "price": 59,
+    "description": "Professional CLI tool with AI integration, CSV support, JSON support, CLI interface. Zero dependencies."
+  },
+  {
     "id": "30c721c1",
     "title": "CLI Tool - Auto-built automation_script",
     "price": 59,
@@ -2394,6 +2424,12 @@
     "description": "Professional CLI tool with AI integration, JSON support, CLI interface. Zero dependencies."
   },
   {
+    "id": "3aece0c8",
+    "title": "CLI Tool - Auto-built python_script",
+    "price": 59,
+    "description": "Professional CLI tool with AI integration, JSON support, CLI interface. Zero dependencies."
+  },
+  {
     "id": "3b4944e2",
     "title": "CLI Tool - E-commerce price tracker",
     "price": 59,
@@ -2414,6 +2450,12 @@
   {
     "id": "43c80faf",
     "title": "CLI Tool - SaaS template with billing and auth",
+    "price": 59,
+    "description": "Professional CLI tool with AI integration, CSV support, JSON support, CLI interface. Zero dependencies."
+  },
+  {
+    "id": "44466b23",
+    "title": "CLI Tool - Auto-built automation_script",
     "price": 59,
     "description": "Professional CLI tool with AI integration, CSV support, JSON support, CLI interface. Zero dependencies."
   },
@@ -2650,6 +2692,12 @@
     "title": "CLI Tool - Multi-API Client with Auth, Caching, Rate Limiting",
     "price": 59,
     "description": "Professional CLI tool with user authentication, rate limiting, AI integration, JSON support. Zero dependencies."
+  },
+  {
+    "id": "8c7200bd",
+    "title": "CLI Tool - Batch renamer: regex, preview",
+    "price": 59,
+    "description": "Professional CLI tool with AI integration, CSV support, JSON support, CLI interface. Zero dependencies."
   },
   {
     "id": "8cd64710",
@@ -3040,6 +3088,12 @@
     "title": "CLI Tool - Auto-built python_script",
     "price": 59,
     "description": "Professional CLI tool with AI integration, JSON support, CLI interface. Zero dependencies."
+  },
+  {
+    "id": "fec7c06b",
+    "title": "CLI Tool - Auto-built automation_script",
+    "price": 59,
+    "description": "Professional CLI tool with AI integration, CSV support, JSON support, CLI interface. Zero dependencies."
   },
   {
     "id": "ff9f9f3a",

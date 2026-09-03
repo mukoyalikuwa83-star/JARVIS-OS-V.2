@@ -115,10 +115,10 @@ SELF_QUIT_GOODBYE = (
 LIVE_VAD_SILENCE_MS = 120
 _LIVE_RECONNECT_MAX_DELAY = 5.0
 _LIVE_KEEPALIVE_INTERVAL = 15.0
-_MIC_GAIN_DB = 65
-_MIC_NOISE_GATE_THRESHOLD = 2
-_MIC_AGC_TARGET = 8000
-_MIC_AGC_RATE = 0.12
+_MIC_GAIN_DB = 80
+_MIC_NOISE_GATE_THRESHOLD = 1
+_MIC_AGC_TARGET = 12000
+_MIC_AGC_RATE = 0.15
 _MIC_DEVICE_ID = 1  # Microphone (Realtek(R) Audio) - confirmed working
 
 # Tool calls that mutate external state, the UI, or running processes. They are

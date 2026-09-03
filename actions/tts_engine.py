@@ -11,6 +11,7 @@ import numpy as np
 import sounddevice as sd
 
 RECEIVE_SAMPLE_RATE = 24000
+_TTS_VOLUME_MULTIPLIER = 3.5  # Amplify TTS output so JARVIS is loud and clear
 
 PROVIDER_VOICES: dict[str, list[tuple[str, str]]] = {
     "gemini": [
@@ -113,7 +114,8 @@ def _play_pcm(pcm: np.ndarray, on_start: Callable | None = None,
     try:
         if on_start:
             on_start()
-        raw = pcm.tobytes()
+        amplified = np.clip(pcm.astype(np.float32) * _TTS_VOLUME_MULTIPLIER, -32768, 32767).astype(np.int16)
+        raw = amplified.tobytes()
         stream = sd.RawOutputStream(
             samplerate=RECEIVE_SAMPLE_RATE,
             channels=1,
