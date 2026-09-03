@@ -97,6 +97,7 @@ import time
 
 from actions.mood_detector import VoiceMoodAnalyzer
 from actions.conversation_memory import ConversationMemory
+from actions.tts_engine import TTSEngine
 from actions.screen_awareness import ScreenAwareness
 from actions.real_hustle import SideHustleEngine
 from core.live_model import pick_live_model, get_fallback_model
@@ -126,7 +127,7 @@ API_CONFIG_PATH = BASE_DIR / "config" / "api_keys.json"
 PROMPT_PATH     = BASE_DIR / "core" / "prompt.txt"
 LIVE_MODEL = "models/gemini-2.5-flash-native-audio-latest"
 CHANNELS            = 1
-SEND_SAMPLE_RATE    = 16000
+SEND_SAMPLE_RATE    = 48000
 SUPPORTED_VOICE_NAMES = {
     "puck", "charon", "kore", "fenrir", "aoede",
     "leda", "orus", "schedar", "zubenelgenubi"
@@ -146,11 +147,11 @@ SELF_QUIT_GOODBYE = (
 LIVE_VAD_SILENCE_MS = 120
 _LIVE_RECONNECT_MAX_DELAY = 5.0
 _LIVE_KEEPALIVE_INTERVAL = 15.0
-_MIC_GAIN_DB = 80
+_MIC_GAIN_DB = 90
 _MIC_NOISE_GATE_THRESHOLD = 1
-_MIC_AGC_TARGET = 12000
-_MIC_AGC_RATE = 0.15
-_MIC_DEVICE_ID = 1  # Microphone (Realtek(R) Audio) - confirmed working
+_MIC_AGC_TARGET = 15000
+_MIC_AGC_RATE = 0.2
+_MIC_DEVICE_ID = 5  # Microphone (Realtek(R) Audio) - tested working at 44100Hz
 
 # Tool calls that mutate external state, the UI, or running processes. They are
 # executed strictly in order so later calls always see the effects of earlier ones.
