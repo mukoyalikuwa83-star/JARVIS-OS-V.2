@@ -56,6 +56,27 @@ try:
 except ImportError:
     pass
 
+def _global_exception_hook(exc_type, exc_value, exc_tb):
+    """Catch any unhandled exception that would silently kill the process."""
+    import traceback as _tb
+    _tb.print_exception(exc_type, exc_value, exc_tb)
+    sys.stderr.flush()
+sys.excepthook = _global_exception_hook
+
+def _async_exception_hook(loop, context):
+    """Catch unhandled async exceptions that would silently kill the event loop."""
+    import traceback as _tb
+    exc = context.get("exception")
+    if exc:
+        _tb.print_exception(type(exc), exc, exc.__traceback__)
+    else:
+        print(f"[AsyncError] {context.get('message', 'unknown')}")
+    sys.stderr.flush()
+try:
+    asyncio.get_event_loop()
+except RuntimeError:
+    pass
+
 from ui import JarvisUI
 from api import status as jarvis_status
 from memory.memory_manager import (
@@ -2244,6 +2265,19 @@ class JarvisLive:
         self._hustle_engine = SideHustleEngine()
         self._conv_memory = ConversationMemory()
 
+    async def _safe_task(self, name: str, coro):
+        """Wrap a coroutine so a single task crash never kills the TaskGroup."""
+        try:
+            return await coro
+        except asyncio.CancelledError:
+            return
+        except Exception as e:
+            print(f"[Task:{name}] ❌ crashed: {e}")
+            try:
+                self.ui.write_log(f"ERR: Task {name} crashed: {str(e)[:60]}")
+            except Exception:
+                pass
+
     _WAKE_WORDS = (
         "jarvis", "hey jarvis", "ok jarvis", "yo jarvis",
         "j-a-r-v-i-s", "jarvis,", "jarvis.",
@@ -4267,18 +4301,18 @@ class JarvisLive:
                     except Exception:
                         pass
 
-                    tg.create_task(self._send_realtime())
-                    tg.create_task(self._listen_audio())
-                    tg.create_task(self._receive_audio())
-                    tg.create_task(self._play_audio())
-                    tg.create_task(self._announce_startup())
-                    tg.create_task(self._keepalive_ping())
-                    tg.create_task(self._periodic_screen_watch())
-                    tg.create_task(self._periodic_vision())
-                    tg.create_task(self._autonomous_monitor())
-                    tg.create_task(self._mood_checkin_loop())
-                    tg.create_task(self._screen_awareness_loop())
-                    tg.create_task(self._money_making_loop())
+                    tg.create_task(self._safe_task("send_realtime", self._send_realtime()))
+                    tg.create_task(self._safe_task("listen_audio", self._listen_audio()))
+                    tg.create_task(self._safe_task("receive_audio", self._receive_audio()))
+                    tg.create_task(self._safe_task("play_audio", self._play_audio()))
+                    tg.create_task(self._safe_task("announce_startup", self._announce_startup()))
+                    tg.create_task(self._safe_task("keepalive_ping", self._keepalive_ping()))
+                    tg.create_task(self._safe_task("periodic_screen_watch", self._periodic_screen_watch()))
+                    tg.create_task(self._safe_task("periodic_vision", self._periodic_vision()))
+                    tg.create_task(self._safe_task("autonomous_monitor", self._autonomous_monitor()))
+                    tg.create_task(self._safe_task("mood_checkin_loop", self._mood_checkin_loop()))
+                    tg.create_task(self._safe_task("screen_awareness_loop", self._screen_awareness_loop()))
+                    tg.create_task(self._safe_task("money_making_loop", self._money_making_loop()))
 
             except Exception as e:
                 actual = e
