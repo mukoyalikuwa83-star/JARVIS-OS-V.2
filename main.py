@@ -7,6 +7,7 @@ from core.error_healer import report_error, report_fix, should_change_model
 import sys
 import warnings
 import traceback
+import atexit
 from pathlib import Path
 
 os.environ.setdefault("QT_LOGGING_RULES", "qt.text.font=false")
@@ -17,6 +18,29 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="sounddevi
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="openai")
 warnings.filterwarnings("ignore", message=".*Setting the shape on a NumPy array.*")
 warnings.filterwarnings("ignore", message=".*numpy array.*")
+warnings.filterwarnings("ignore", message=".*numpy.*", category=DeprecationWarning)
+warnings.filterwarnings("ignore", message=".*Py玤back.*", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=ResourceWarning)
+
+_original_showwarning = warnings.showwarning
+def _silence_sounddevice_warnings(msg, *args, **kwargs):
+    if "sounddevice" in str(msg) or "numpy" in str(msg).lower():
+        return
+    _original_showwarning(msg, *args, **kwargs)
+warnings.showwarning = _silence_sounddevice_warnings
+
+_audio_streams = []
+
+def _cleanup_audio():
+    for stream in _audio_streams:
+        try:
+            stream.stop()
+            stream.close()
+        except Exception:
+            pass
+    _audio_streams.clear()
+
+atexit.register(_cleanup_audio)
 
 # sounddevice deferred to JarvisLive.__init__ for faster startup
 sd = None
@@ -3951,7 +3975,7 @@ class JarvisLive:
             if not opened:
                 print("[Assistant] Could not open any microphone. Running without mic.")
                 while not self._shutdown_requested.is_set():
-                await asyncio.sleep(0.3)
+                    await asyncio.sleep(0.3)
         except Exception as e:
             print(f"[Assistant] Mic error: {e}")
             while not self._shutdown_requested.is_set():
@@ -4126,6 +4150,7 @@ class JarvisLive:
             blocksize=play_chunk,
         )
         stream.start()
+        _audio_streams.append(stream)
 
         prebuf = []
         prebuf_target = 1
@@ -4712,6 +4737,7 @@ class JarvisLive:
                 ):
                     self.session        = session
                     self._loop          = asyncio.get_event_loop()
+                    self._loop.set_exception_handler(_async_exception_hook)
                     self._tg            = tg
                     self.audio_in_queue = asyncio.Queue()
                     self.out_queue      = asyncio.Queue(maxsize=200)
@@ -4833,50 +4859,67 @@ def main():
     def runner():
         ui.wait_for_api_key()
         voice_name = _load_voice_name()
-        jarvis = JarvisLive(ui, voice_name)
-        ui.on_quit_requested = jarvis.request_shutdown
-
-        ui.on_voice_change = jarvis.update_voice
-        def _on_tts_change(provider, api_key, voice_id):
-            if provider == "gemini":
-                jarvis._tts_engine = None
-                jarvis._ext_tts_provider = ""
-                jarvis._ext_tts_voice_id = ""
-                jarvis._ext_tts_api_key = ""
-                jarvis.update_voice(voice_id)
-            else:
-                jarvis._ext_tts_provider = provider
-                jarvis._ext_tts_voice_id = voice_id
-                jarvis._ext_tts_api_key = api_key
-                try:
-                    jarvis._tts_engine = TTSEngine(
-                        provider=provider,
-                        api_key=api_key,
-                        voice_id=voice_id,
-                        on_speaking_start=lambda: jarvis.set_speaking(True),
-                        on_speaking_stop=lambda: jarvis.set_speaking(False),
-                    )
-                    jarvis.ui.write_log(f"SYS: TTS engine ready: {provider} / {voice_id}")
-                    jarvis.ui.write_log("SYS: Gemini audio muted - using external TTS")
-                except Exception as e:
-                    jarvis.ui.write_log(f"SYS: TTS engine error: {e}")
-                # Restart session so new TTS takes effect
-                if jarvis.session and jarvis._loop:
-                    try:
-                        asyncio.run_coroutine_threadsafe(jarvis.session.close(), jarvis._loop)
-                    except Exception as e:
-                        print(f"[Assistant] Could not close session: {e}")
-        ui.on_tts_provider_change = _on_tts_change
-        try:
-            asyncio.run(jarvis.run())
-        except KeyboardInterrupt:
-            print("\n🔴 Shutting down...")
-        except Exception as exc:
-            message = f"Gemini startup failed: {str(exc)[:180]}"
-            print(f"[Assistant] ❌ {message}")
+        max_restarts = 50
+        restart_count = 0
+        
+        while restart_count < max_restarts:
             try:
-                ui.write_log(f"ERR: {message}")
-                ui.set_state("LISTENING")
+                jarvis = JarvisLive(ui, voice_name)
+                ui.on_quit_requested = jarvis.request_shutdown
+                ui.on_voice_change = jarvis.update_voice
+                
+                def _on_tts_change(provider, api_key, voice_id):
+                    if provider == "gemini":
+                        jarvis._tts_engine = None
+                        jarvis._ext_tts_provider = ""
+                        jarvis._ext_tts_voice_id = ""
+                        jarvis._ext_tts_api_key = ""
+                        jarvis.update_voice(voice_id)
+                    else:
+                        jarvis._ext_tts_provider = provider
+                        jarvis._ext_tts_voice_id = voice_id
+                        jarvis._ext_tts_api_key = api_key
+                        try:
+                            jarvis._tts_engine = TTSEngine(
+                                provider=provider,
+                                api_key=api_key,
+                                voice_id=voice_id,
+                                on_speaking_start=lambda: jarvis.set_speaking(True),
+                                on_speaking_stop=lambda: jarvis.set_speaking(False),
+                            )
+                            jarvis.ui.write_log(f"SYS: TTS engine ready: {provider} / {voice_id}")
+                            jarvis.ui.write_log("SYS: Gemini audio muted - using external TTS")
+                        except Exception as e:
+                            jarvis.ui.write_log(f"SYS: TTS engine error: {e}")
+                        if jarvis.session and jarvis._loop:
+                            try:
+                                asyncio.run_coroutine_threadsafe(jarvis.session.close(), jarvis._loop)
+                            except Exception as e:
+                                print(f"[Assistant] Could not close session: {e}")
+                
+                ui.on_tts_provider_change = _on_tts_change
+                asyncio.run(jarvis.run())
+                break
+                
+            except KeyboardInterrupt:
+                print("\n Shutting down...")
+                break
+            except Exception as exc:
+                restart_count += 1
+                message = f"Runner error (attempt {restart_count}): {str(exc)[:180]}"
+                print(f"[Assistant] {message}")
+                try:
+                    ui.write_log(f"SYS: Restarting... ({restart_count}/{max_restarts})")
+                    ui.set_state("LISTENING")
+                except Exception:
+                    pass
+                import time as _time
+                _time.sleep(min(3 * restart_count, 30))
+        
+        if restart_count >= max_restarts:
+            print("[Assistant] Max restarts reached. Exiting.")
+            try:
+                ui.write_log("SYS: Too many crashes. Stopped.")
             except Exception:
                 pass
 
