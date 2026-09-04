@@ -103,6 +103,8 @@ from actions.real_hustle import SideHustleEngine
 from core.live_model import pick_live_model, get_fallback_model
 from core.identity import assistant_name, greeting as build_greeting
 from core import qa_mode
+from awareness.engine import AwarenessEngine
+from memory.answer_cache import get_cached_answer, save_cached_answer
 
 
 def get_base_dir():
@@ -2273,6 +2275,11 @@ class JarvisLive:
         self._consecutive_silence = 0
         self._mood_analyzer = VoiceMoodAnalyzer()
         self._screen_awareness = ScreenAwareness()
+        self._awareness_engine = AwarenessEngine()
+        try:
+            self._awareness_engine.start()
+        except Exception:
+            pass
         self._hustle_engine = SideHustleEngine()
         self._conv_memory = ConversationMemory()
 
@@ -2677,6 +2684,15 @@ class JarvisLive:
     async def _execute_tool(self, fc) -> types.FunctionResponse:
         name = fc.name
         args = dict(fc.args or {})
+
+        if name in ("web_search", "code_helper") and "query" in args:
+            cached = get_cached_answer(args["query"])
+            if cached:
+                print(f"[Assistant] 🔧 {name} (CACHED)")
+                return types.FunctionResponse(
+                    id=fc.id, name=name,
+                    response={"result": cached},
+                )
 
         print(f"[Assistant] 🔧 {name}  {args}")
         ui = self.ui
@@ -3322,6 +3338,11 @@ class JarvisLive:
                         turns={"parts": [{"text": f"Done! Took {_tool_elapsed:.0f} seconds."}]},
                         turn_complete=False
                     )
+                except Exception:
+                    pass
+            if name in ("web_search", "code_helper") and result and "query" in args:
+                try:
+                    save_cached_answer(args["query"], str(result)[:1200])
                 except Exception:
                     pass
             return types.FunctionResponse(
@@ -4461,6 +4482,15 @@ def main():
                 ui.set_state("LISTENING")
             except Exception:
                 pass
+
+    def _start_api_server():
+        try:
+            import uvicorn
+            from api.server import app
+            uvicorn.run(app, host="127.0.0.1", port=8080, log_level="error")
+        except Exception:
+            pass
+    threading.Thread(target=_start_api_server, daemon=True).start()
 
     threading.Thread(target=runner, daemon=True).start()
     print("[Assistant] ✅ Interface ready.")
