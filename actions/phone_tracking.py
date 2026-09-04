@@ -97,7 +97,7 @@ def _get_contacts():
         return "No contacts"
     lines = []
     for c in contacts:
-        lines.append(f"{c['name']} | {c['number']} | {c.get('email', '')}")
+        lines.append(f"{c.get('name', '?')} | {c.get('number', '?')} | {c.get('email', '')}")
     return "\n".join(lines)
 
 def _search_contact(params):
@@ -108,7 +108,7 @@ def _search_contact(params):
         return f"No contacts matching '{query}'"
     lines = []
     for c in matches:
-        lines.append(f"{c['name']} | {c['number']}")
+        lines.append(f"{c.get('name', '?')} | {c.get('number', '?')}")
     return "\n".join(lines)
 
 def _delete_contact(params):
