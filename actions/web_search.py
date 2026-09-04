@@ -138,6 +138,59 @@ def _format_ddg(query: str, results: list[dict]) -> str:
     return "\n".join(lines).strip()
 
 
+def _fast_search(query: str, max_results: int = 6) -> list[dict]:
+    """Direct HTTP search via DuckDuckGo HTML — no API key, no package needed."""
+    try:
+        import requests
+        from urllib.parse import quote_plus
+        from html.parser import HTMLParser
+
+        url = f"https://html.duckduckgo.com/html/?q={quote_plus(query)}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+        resp = requests.get(url, headers=headers, timeout=8)
+        if resp.status_code != 200:
+            return []
+
+        class DDGParser(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self._results = []
+                self._in_result = False
+                self._in_snippet = False
+                self._current = {}
+                self._depth = 0
+            def handle_starttag(self, tag, attrs):
+                attrs_dict = dict(attrs)
+                cls = attrs_dict.get("class", "")
+                if tag == "a" and "result__a" in cls:
+                    self._in_result = True
+                    self._current = {"title": "", "snippet": "", "url": attrs_dict.get("href", "")}
+                elif tag == "a" and "result__snippet" in cls:
+                    self._in_snippet = True
+            def handle_data(self, data):
+                if self._in_result:
+                    self._current["title"] += data
+                elif self._in_snippet:
+                    self._current["snippet"] += data
+            def handle_endtag(self, tag):
+                if tag == "a" and self._in_result:
+                    self._in_result = False
+                elif tag == "a" and self._in_snippet:
+                    self._in_snippet = False
+                    if self._current.get("title"):
+                        self._results.append(self._current)
+                    self._current = {}
+
+        parser = DDGParser()
+        parser.feed(resp.text)
+        return parser._results[:max_results]
+    except Exception:
+        return []
+
+
 def _compare(items: list[str], aspect: str) -> str:
     query = (
         f"Compare {', '.join(items)} in terms of {aspect}. "
@@ -194,13 +247,22 @@ def web_search(
             print("[WebSearch] ✅ Compare done.")
             return result
 
+        # Try fast direct search first (no API key, ~1-2s)
+        print("[WebSearch] ⚡ Trying fast search...")
+        results = _fast_search(query)
+        if results:
+            result = _format_ddg(query, results)
+            print(f"[WebSearch] ✅ Fast search: {len(results)} result(s).")
+            return result
+
+        # Fallback to Gemini (richer but slower)
         print("[WebSearch] 🌐 Trying Gemini...")
         try:
             result = _gemini_search(query)
             print("[WebSearch] ✅ Gemini OK.")
             return result
         except Exception as e:
-            print(f"[WebSearch] ⚠️ Gemini failed ({e}) — trying DDG...")
+            print(f"[WebSearch] ⚠️ Gemini failed ({e}) — trying DDG package...")
             results = _ddg_search(query)
             result  = _format_ddg(query, results)
             print(f"[WebSearch] ✅ DDG: {len(results)} result(s).")

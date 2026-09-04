@@ -87,24 +87,176 @@ try:
 except RuntimeError:
     pass
 
-from ui import JarvisUI
-from api import status as jarvis_status
-from memory.memory_manager import (
-    load_memory, update_memory, format_memory_for_prompt,
-)
+try:
+    from ui import JarvisUI
+except Exception as e:
+    print(f"[FATAL] ui import failed: {e}")
+    raise
+
+try:
+    from api import status as jarvis_status
+except Exception:
+    jarvis_status = None
+
+try:
+    from memory.memory_manager import (
+        load_memory, update_memory, format_memory_for_prompt,
+    )
+except Exception:
+    load_memory = lambda: {}
+    update_memory = lambda *a, **k: None
+    format_memory_for_prompt = lambda *a: ""
+
 import hashlib
 import time
 
-from actions.mood_detector import VoiceMoodAnalyzer
-from actions.conversation_memory import ConversationMemory
-from actions.tts_engine import TTSEngine
-from actions.screen_awareness import ScreenAwareness
-from actions.real_hustle import SideHustleEngine
-from core.live_model import pick_live_model, get_fallback_model
-from core.identity import assistant_name, greeting as build_greeting
-from core import qa_mode
-from awareness.engine import AwarenessEngine
-from memory.answer_cache import get_cached_answer, save_cached_answer
+try:
+    from actions.mood_detector import VoiceMoodAnalyzer
+except Exception:
+    VoiceMoodAnalyzer = None
+
+try:
+    from actions.conversation_memory import ConversationMemory
+except Exception:
+    ConversationMemory = None
+
+try:
+    from actions.tts_engine import TTSEngine
+except Exception:
+    TTSEngine = None
+
+try:
+    from actions.screen_awareness import ScreenAwareness
+except Exception:
+    ScreenAwareness = None
+
+try:
+    from actions.real_hustle import SideHustleEngine
+except Exception:
+    SideHustleEngine = None
+
+try:
+    from core.live_model import pick_live_model, get_fallback_model
+except Exception:
+    pick_live_model = None
+    get_fallback_model = None
+
+try:
+    from core.identity import assistant_name, greeting as build_greeting
+except Exception:
+    assistant_name = "JARVIS"
+    build_greeting = lambda *a, **k: "Hello."
+
+try:
+    from core import qa_mode
+except Exception:
+    class _QAMode:
+        qa_enabled = staticmethod(lambda: False)
+        guard_tool_call = staticmethod(lambda *a: None)
+        qa_block_message = staticmethod(lambda *a: "")
+    qa_mode = _QAMode()
+
+try:
+    from awareness.engine import AwarenessEngine
+except Exception:
+    AwarenessEngine = None
+
+try:
+    from memory.answer_cache import get_cached_answer, save_cached_answer
+except Exception:
+    get_cached_answer = lambda *a: None
+    save_cached_answer = lambda *a, **k: None
+
+# ─── Orphaned module imports (auto-connected) ────────────────────────
+try:
+    from actions.product_enricher import enrich_product
+except Exception:
+    enrich_product = None
+
+try:
+    from actions.presentations import sources as pres_sources
+except Exception:
+    pres_sources = None
+
+try:
+    from actions.presentations import quality as pres_quality
+except Exception:
+    pres_quality = None
+
+try:
+    from actions.presentations import models3d as pres_models3d
+except Exception:
+    pres_models3d = None
+
+try:
+    from actions.presentations import models as pres_models
+except Exception:
+    pres_models = None
+
+try:
+    from actions.presentations import assets as pres_assets
+except Exception:
+    pres_assets = None
+
+try:
+    from core.secret_store import SecretStore
+except Exception:
+    SecretStore = None
+
+try:
+    from core.qa_report import QaReport
+except Exception:
+    QaReport = None
+
+try:
+    from core.qa_audit import QaAudit
+except Exception:
+    QaAudit = None
+
+try:
+    from core.graphics_capability import GraphicsCapability
+except Exception:
+    GraphicsCapability = None
+
+try:
+    from core.gemini_compat import GeminiCompat
+except Exception:
+    GeminiCompat = None
+
+try:
+    from core.autonomy import Autonomy
+except Exception:
+    Autonomy = None
+
+try:
+    from core.api_key_validator import ApiKeyValidator
+except Exception:
+    ApiKeyValidator = None
+
+try:
+    from memory.task_history import TaskHistory
+except Exception:
+    TaskHistory = None
+
+try:
+    from memory.config_manager import ConfigManager
+except Exception:
+    ConfigManager = None
+
+try:
+    from agent.executor import AgentExecutor
+except Exception:
+    AgentExecutor = None
+
+try:
+    from agent.error_handler import AgentErrorHandler
+except Exception:
+    AgentErrorHandler = None
+
+try:
+    from agent.planner import AgentPlanner
+except Exception:
+    AgentPlanner = None
 
 
 def get_base_dir():
@@ -146,13 +298,13 @@ SELF_QUIT_GOODBYE = (
     "Until next time."
 )
 
-LIVE_VAD_SILENCE_MS = 120
+LIVE_VAD_SILENCE_MS = 80
 _LIVE_RECONNECT_MAX_DELAY = 5.0
 _LIVE_KEEPALIVE_INTERVAL = 15.0
-_MIC_GAIN_DB = 90
-_MIC_NOISE_GATE_THRESHOLD = 1
-_MIC_AGC_TARGET = 15000
-_MIC_AGC_RATE = 0.2
+_MIC_GAIN_DB = 95
+_MIC_NOISE_GATE_THRESHOLD = 0.5
+_MIC_AGC_TARGET = 18000
+_MIC_AGC_RATE = 0.25
 _MIC_DEVICE_ID = 5  # Microphone (Realtek(R) Audio) - tested working at 44100Hz
 
 # Tool calls that mutate external state, the UI, or running processes. They are
@@ -2219,6 +2371,204 @@ TOOL_DECLARATIONS = [
             "required": ["action"],
         }
     },
+    {
+        "name": "camera_control",
+        "description": (
+            "Camera and vision control — capture photos, take screenshots, OCR, face detection, list cameras."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "enum": ["capture", "screenshot", "ocr", "detect_faces", "list_cameras", "status"],
+                    "description": "Camera action."
+                },
+                "path": {"type": "STRING", "description": "Image path for OCR."},
+                "camera_index": {"type": "INTEGER", "description": "Camera index (default 0)."},
+            },
+            "required": ["action"],
+        }
+    },
+    {
+        "name": "phone_tracking",
+        "description": (
+            "Phone call tracking — log calls, manage contacts, get call history and stats."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "enum": ["log_call", "get_calls", "add_contact", "get_contacts", "search_contact", "call_stats", "delete_contact"],
+                    "description": "Phone tracking action."
+                },
+                "number": {"type": "STRING", "description": "Phone number."},
+                "contact": {"type": "STRING", "description": "Contact name."},
+                "direction": {"type": "STRING", "enum": ["incoming", "outgoing"], "description": "Call direction."},
+                "duration": {"type": "INTEGER", "description": "Call duration in seconds."},
+                "notes": {"type": "STRING", "description": "Call notes."},
+                "name": {"type": "STRING", "description": "Contact name for search/add."},
+                "email": {"type": "STRING", "description": "Contact email."},
+                "limit": {"type": "INTEGER", "description": "Number of calls to retrieve."},
+            },
+            "required": ["action"],
+        }
+    },
+    {
+        "name": "smart_home",
+        "description": (
+            "Smart home control — add/remove/control devices, activate scenes, Hue, Home Assistant, MQTT."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "enum": ["add_device", "remove_device", "list_devices", "control", "status", "scene", "discover"],
+                    "description": "Smart home action."
+                },
+                "name": {"type": "STRING", "description": "Device name."},
+                "type": {"type": "STRING", "description": "Device type (light, thermostat, plug)."},
+                "command": {"type": "STRING", "description": "Command (on, off, brightness N)."},
+                "scene": {"type": "STRING", "description": "Scene name (movie, morning, away, night)."},
+                "protocol": {"type": "STRING", "description": "Protocol (hue, home_assistant, mqtt, http)."},
+                "ip": {"type": "STRING", "description": "Device IP or bridge URL."},
+                "api_key": {"type": "STRING", "description": "API key or token."},
+                "room": {"type": "STRING", "description": "Room name."},
+            },
+            "required": ["action"],
+        }
+    },
+    {
+        "name": "vehicle_control",
+        "description": (
+            "Vehicle integration — Tesla API (status, lock, unlock, climate, location, charge), OBD-II, GPS tracking."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "enum": ["tesla_status", "tesla_unlock", "tesla_lock", "tesla_climate", "tesla_location", "tesla_charge", "obd_read", "obd_codes", "gps_track", "setup", "status"],
+                    "description": "Vehicle action."
+                },
+                "tesla_token": {"type": "STRING", "description": "Tesla API token."},
+                "tesla_email": {"type": "STRING", "description": "Tesla account email."},
+                "temperature": {"type": "NUMBER", "description": "Climate temperature in Celsius."},
+                "port": {"type": "STRING", "description": "OBD or GPS serial port."},
+            },
+            "required": ["action"],
+        }
+    },
+    {
+        "name": "cybersecurity",
+        "description": (
+            "Cybersecurity monitoring — port scanning, network scan, firewall check, malware scan, security report."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "enum": ["scan_ports", "scan_network", "check_firewall", "check_updates", "malware_scan", "check_connections", "security_report", "check_ssl", "status"],
+                    "description": "Security action."
+                },
+                "host": {"type": "STRING", "description": "Target host for port scan."},
+                "ports": {"type": "STRING", "description": "Comma-separated ports to scan."},
+                "domain": {"type": "STRING", "description": "Domain for SSL check."},
+            },
+            "required": ["action"],
+        }
+    },
+    {
+        "name": "data_analysis",
+        "description": (
+            "Data analysis — analyze CSV/JSON, statistics, trends, comparison, filtering, charts."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "enum": ["analyze_csv", "analyze_json", "compare", "trend", "summarize", "filter", "sort", "convert", "statistics", "visualize"],
+                    "description": "Analysis action."
+                },
+                "path": {"type": "STRING", "description": "File path."},
+                "path2": {"type": "STRING", "description": "Second file path for comparison."},
+                "column": {"type": "STRING", "description": "Column name."},
+                "value": {"type": "STRING", "description": "Filter value."},
+                "values": {"type": "STRING", "description": "Comma-separated numeric values."},
+                "labels": {"type": "STRING", "description": "Comma-separated chart labels."},
+                "title": {"type": "STRING", "description": "Chart title."},
+                "to": {"type": "STRING", "description": "Target format (json, csv)."},
+            },
+            "required": ["action"],
+        }
+    },
+    {
+        "name": "automation_engine",
+        "description": (
+            "Automation engine — create/run automations, schedule tasks, set timers, reminders, workflows."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "enum": ["create", "list", "delete", "run", "stop", "schedule", "timer", "reminder", "workflow", "status"],
+                    "description": "Automation action."
+                },
+                "name": {"type": "STRING", "description": "Automation name."},
+                "id": {"type": "STRING", "description": "Automation ID."},
+                "trigger": {"type": "STRING", "description": "Trigger type (manual, schedule, event)."},
+                "actions": {"type": "ARRAY", "description": "List of actions to execute."},
+                "interval": {"type": "INTEGER", "description": "Interval in seconds."},
+                "cron": {"type": "STRING", "description": "Cron expression."},
+                "time": {"type": "STRING", "description": "Scheduled time."},
+                "message": {"type": "STRING", "description": "Reminder message."},
+                "seconds": {"type": "INTEGER", "description": "Timer duration in seconds."},
+                "steps": {"type": "ARRAY", "description": "Workflow steps."},
+            },
+            "required": ["action"],
+        }
+    },
+    {
+        "name": "stripe_payments",
+        "description": (
+            "Stripe payment processing — create products, prices, payment links, checkout sessions, "
+            "manage customers, subscriptions, refunds, and view balance/transactions."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {
+                    "type": "STRING",
+                    "enum": ["create_payment_link", "create_product", "list_products", "create_price", "create_checkout", "get_balance", "list_transactions", "create_refund", "create_customer", "create_subscription", "status"],
+                    "description": "Stripe action."
+                },
+                "name": {"type": "STRING", "description": "Product or customer name."},
+                "product_name": {"type": "STRING", "description": "Product name for payment link."},
+                "description": {"type": "STRING", "description": "Product description."},
+                "amount": {"type": "NUMBER", "description": "Amount in dollars (e.g. 9.99)."},
+                "currency": {"type": "STRING", "description": "Currency code (usd, zar, eur)."},
+                "price_id": {"type": "STRING", "description": "Stripe price ID."},
+                "product_id": {"type": "STRING", "description": "Stripe product ID."},
+                "charge_id": {"type": "STRING", "description": "Charge ID for refund."},
+                "customer_id": {"type": "STRING", "description": "Customer ID."},
+                "email": {"type": "STRING", "description": "Customer email."},
+                "recurring": {"type": "BOOLEAN", "description": "Create recurring price."},
+                "interval": {"type": "STRING", "description": "Recurring interval (month, year, week, day)."},
+                "limit": {"type": "INTEGER", "description": "Number of items to list."},
+                "mode": {"type": "STRING", "description": "Checkout mode (payment, subscription, setup)."},
+                "success_url": {"type": "STRING", "description": "Checkout success URL."},
+                "cancel_url": {"type": "STRING", "description": "Checkout cancel URL."},
+                "payload": {"type": "STRING", "description": "Webhook payload."},
+                "sig_header": {"type": "STRING", "description": "Webhook signature header."},
+            },
+            "required": ["action"],
+        }
+    },
 ]
 
 class JarvisLive:
@@ -2263,7 +2613,7 @@ class JarvisLive:
         self._barge_in_event = threading.Event()
         self._last_barge_in_time = 0.0
         self._playback_started_at = 0.0
-        self._barge_in_grace_ms = 0.8
+        self._barge_in_grace_ms = 0.5
         self._playback_energy = 0.0
         self._mic_energy_level = 0.0
         self._mic_energy_lock = threading.Lock()
@@ -2558,7 +2908,7 @@ class JarvisLive:
 
     async def _send_first_greet_summary(self):
         """On first user speech, proactively inject a brief status summary."""
-        await asyncio.sleep(1.5)
+        await asyncio.sleep(0.5)
         try:
             import psutil
             battery = psutil.sensors_battery()
@@ -2648,6 +2998,14 @@ class JarvisLive:
             conv_ctx_str = conv_mem.get_recent_context(3)
             if conv_ctx_str and conv_ctx_str != "No previous conversation history.":
                 parts.append(f"\n{conv_ctx_str}\n")
+
+        try:
+            from memory.persistent_memory import build_memory_context
+            pm_ctx = build_memory_context(max_chars=3000)
+            if pm_ctx:
+                parts.append(f"\n[PERSISTENT MEMORY]\n{pm_ctx}\n")
+        except Exception:
+            pass
 
         mood_hint = getattr(self, "_mood_analyzer", None)
         if mood_hint:
@@ -3292,6 +3650,38 @@ class JarvisLive:
                 else:
                     result = "SafeTextEntry: type_text|type_enter|validate"
 
+            elif name == "camera_control":
+                from actions.camera_control import handle as camera_handle
+                result = await loop.run_in_executor(None, lambda: camera_handle(args))
+
+            elif name == "phone_tracking":
+                from actions.phone_tracking import handle as phone_handle
+                result = await loop.run_in_executor(None, lambda: phone_handle(args))
+
+            elif name == "smart_home":
+                from actions.smart_home import handle as smarthome_handle
+                result = await loop.run_in_executor(None, lambda: smarthome_handle(args))
+
+            elif name == "vehicle_control":
+                from actions.vehicle_control import handle as vehicle_handle
+                result = await loop.run_in_executor(None, lambda: vehicle_handle(args))
+
+            elif name == "cybersecurity":
+                from actions.cybersecurity import handle as security_handle
+                result = await loop.run_in_executor(None, lambda: security_handle(args))
+
+            elif name == "data_analysis":
+                from actions.data_analysis import handle as data_handle
+                result = await loop.run_in_executor(None, lambda: data_handle(args))
+
+            elif name == "automation_engine":
+                from actions.automation_engine import handle as auto_handle
+                result = await loop.run_in_executor(None, lambda: auto_handle(args))
+
+            elif name == "stripe_payments":
+                from actions.stripe_payments import handle as stripe_handle
+                result = await loop.run_in_executor(None, lambda: stripe_handle(args))
+
             elif name == "jarvis_file_stamp":
                 from actions.jarvis_file_stamp import mark_created_file, stamp_text_content, can_embed_stamp, write_sidecar_metadata
                 action = args.get("action", "help")
@@ -3561,7 +3951,7 @@ class JarvisLive:
             if not opened:
                 print("[Assistant] Could not open any microphone. Running without mic.")
                 while not self._shutdown_requested.is_set():
-                    await asyncio.sleep(1)
+                await asyncio.sleep(0.3)
         except Exception as e:
             print(f"[Assistant] Mic error: {e}")
             while not self._shutdown_requested.is_set():
@@ -3578,7 +3968,7 @@ class JarvisLive:
                 if self._shutdown_requested.is_set():
                     return
                 if not self.session:
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(0.5)
                     continue
                 async for response in self.session.receive():
                     self._last_keepalive_activity = time.monotonic()
@@ -3674,6 +4064,11 @@ class JarvisLive:
                             if full_in and full_out:
                                 mood = self._mood_analyzer.get_mood()
                                 self._conv_memory.record_turn(full_in, full_out, mood)
+                                try:
+                                    from memory.persistent_memory import log_conversation
+                                    log_conversation(full_in, full_out, {"mood": str(mood)})
+                                except Exception:
+                                    pass
                             if (
                                 getattr(self, "_pending_self_quit", False)
                                 and (full_out or turn_had_audio)

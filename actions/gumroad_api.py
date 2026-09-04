@@ -23,7 +23,16 @@ def _save_config(cfg):
 
 def _get_token():
     cfg = _load_config()
-    return cfg.get("gumroad_access_token", "")
+    token = cfg.get("gumroad_access_token", "")
+    if not token:
+        import os
+        token = os.environ.get("GUMROAD_ACCESS_TOKEN", "")
+    if not token:
+        accounts = _DATA_DIR / "accounts.json"
+        if accounts.exists():
+            acc = json.loads(accounts.read_text(encoding="utf-8"))
+            token = acc.get("gumroad", {}).get("access_token", "")
+    return token
 
 
 def set_token(token):
