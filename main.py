@@ -2275,7 +2275,9 @@ class JarvisLive:
         self._consecutive_silence = 0
         self._mood_analyzer = VoiceMoodAnalyzer()
         self._screen_awareness = ScreenAwareness()
-        self._awareness_engine = AwarenessEngine()
+        self._awareness_engine = AwarenessEngine(
+            popup_scheduler=lambda msg, ptype=None: None
+        )
         try:
             self._awareness_engine.start()
         except Exception:
