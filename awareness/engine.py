@@ -7,13 +7,12 @@ import subprocess
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
 from typing import Callable, Optional
+from enum import Enum
 
-try:
-    from ui import PopupType
-except Exception:
-    from enum import Enum
-    class PopupType(Enum):
-        PRESENCE = "presence"
+class PopupType(Enum):
+    PRESENCE = "presence"
+    ALERT = "alert"
+    INSIGHT = "insight"
 
 
 @dataclass

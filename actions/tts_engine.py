@@ -8,7 +8,11 @@ import threading
 from typing import Callable
 
 import numpy as np
-import sounddevice as sd
+
+try:
+    import sounddevice as sd
+except Exception:
+    sd = None
 
 RECEIVE_SAMPLE_RATE = 24000
 _TTS_VOLUME_MULTIPLIER = 3.5  # Amplify TTS output so JARVIS is loud and clear
