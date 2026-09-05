@@ -303,7 +303,7 @@ BASE_DIR        = get_base_dir()
 _load_dotenv()
 API_CONFIG_PATH = BASE_DIR / "config" / "api_keys.json"
 PROMPT_PATH     = BASE_DIR / "core" / "prompt.txt"
-LIVE_MODEL = "models/gemini-2.5-flash-native-audio-latest"
+LIVE_MODEL = "models/gemini-2.5-flash-native-audio-preview-12-2025"
 CHANNELS            = 1
 SEND_SAMPLE_RATE    = 48000
 SUPPORTED_VOICE_NAMES = {
@@ -4139,17 +4139,25 @@ class JarvisLive:
 
 
     async def _play_audio(self):
-        print("[Assistant] 🔊 Play started")
+        print("[Assistant] Play started")
         import numpy as _np
 
+        if sd is None:
+            print("[Assistant] sounddevice not available, skipping audio playback")
+            return
+
         play_chunk = CHUNK_SIZE * 2
-        stream = sd.RawOutputStream(
-            samplerate=RECEIVE_SAMPLE_RATE,
-            channels=CHANNELS,
-            dtype="int16",
-            blocksize=play_chunk,
-        )
-        stream.start()
+        try:
+            stream = sd.RawOutputStream(
+                samplerate=RECEIVE_SAMPLE_RATE,
+                channels=CHANNELS,
+                dtype="int16",
+                blocksize=play_chunk,
+            )
+            stream.start()
+        except Exception as e:
+            print(f"[Assistant] Failed to open playback stream: {e}")
+            return
         _audio_streams.append(stream)
 
         prebuf = []

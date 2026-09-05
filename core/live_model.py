@@ -80,10 +80,11 @@ def pick_live_model(client, config_path: Path) -> str:
         )
     ]
     if not live_models:
-        raise RuntimeError(
-            "No Gemini Live-capable model is available for this API key. "
-            "Check that Gemini Live API access is enabled."
+        print(
+            f"[Assistant] No live models found via API listing. "
+            f"Using configured: {configured}"
         )
+        return configured
 
     if configured in live_models:
         return configured
