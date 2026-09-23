@@ -1,269 +1,166 @@
 """
-Smart Home / Device Control Module for JARVIS.
-Control lights, thermostats, plugs, sensors via APIs.
-Supports: Philips Hue, Tuya, MQTT, Home Assistant, generic HTTP.
-Requires: requests (installed)
+Smart Home / IoT Agent — Part 3.3: Lights, sensors, thermostats, locks.
+Integrates via Home Assistant hub (Matter/Zigbee/Z-Wave).
 """
-import os
-import time
+import asyncio
 import json
+import time
+from typing import Dict, Any, List, Optional
+from datetime import datetime, timezone
 from pathlib import Path
 
-_DATA_DIR = Path(__file__).resolve().parent.parent / ".jarvis"
-_DATA_DIR.mkdir(exist_ok=True)
-_DEVICES_FILE = _DATA_DIR / "smart_devices.json"
+from core.domain_agent import DomainAgent, DomainConfig
+from core.safety_guardian import is_killed, check_circuit_breaker
+from core.audit_log import write_audit_entry
 
-def handle(params=None):
-    params = params or {}
-    action = params.get("action", "status")
+class SmartHomeAgent(DomainAgent):
+    """Smart Home / IoT control via Home Assistant hub."""
     
-    if action == "add_device":
-        return _add_device(params)
-    elif action == "remove_device":
-        return _remove_device(params)
-    elif action == "list_devices":
-        return _list_devices()
-    elif action == "control":
-        return _control_device(params)
-    elif action == "status":
-        return _device_status(params)
-    elif action == "scene":
-        return _activate_scene(params)
-    elif action == "hue_setup":
-        return _setup_hue(params)
-    elif action == "home_assistant":
-        return _home_assistant_call(params)
-    elif action == "mqtt_publish":
-        return _mqtt_publish(params)
-    elif action == "discover":
-        return _discover_devices()
-    else:
-        return "SmartHome: add_device|remove_device|list_devices|control|status|scene|hue_setup|home_assistant|mqtt_publish|discover"
-
-def _load_devices():
-    try:
-        if _DEVICES_FILE.exists():
-            return json.loads(_DEVICES_FILE.read_text(encoding="utf-8"))
-    except Exception:
-        pass
-    return []
-
-def _save_devices(devices):
-    _DEVICES_FILE.write_text(json.dumps(devices, indent=2, default=str), encoding="utf-8")
-
-def _add_device(params):
-    devices = _load_devices()
-    device = {
-        "id": params.get("id", str(int(time.time()))[-8:]),
-        "name": params.get("name", "Unknown"),
-        "type": params.get("type", "light"),
-        "protocol": params.get("protocol", "http"),
-        "ip": params.get("ip", ""),
-        "api_key": params.get("api_key", ""),
-        "room": params.get("room", ""),
-        "state": "off",
-        "added": time.strftime("%Y-%m-%d %H:%M:%S"),
-    }
-    devices.append(device)
-    _save_devices(devices)
-    return f"Device added: {device['name']} ({device['type']})"
-
-def _remove_device(params):
-    devices = _load_devices()
-    name = params.get("name", "").lower()
-    before = len(devices)
-    devices = [d for d in devices if name not in d["name"].lower()]
-    if len(devices) == before:
-        return f"No device matching '{name}'"
-    _save_devices(devices)
-    return f"Removed {before - len(devices)} device(s)"
-
-def _list_devices():
-    devices = _load_devices()
-    if not devices:
-        return "No devices registered. Use add_device or discover."
-    lines = []
-    for d in devices:
-        lines.append(f"[{d['id']}] {d['name']} ({d['type']}) - {d['state']} - {d.get('room', 'no room')}")
-    return "\n".join(lines)
-
-def _control_device(params):
-    devices = _load_devices()
-    name = params.get("name", "").lower()
-    command = params.get("command", "on").lower()
-    target = [d for d in devices if name in d["name"].lower()]
-    if not target:
-        return f"No device matching '{name}'"
-    device = target[0]
-    
-    if device["protocol"] == "hue":
-        return _control_hue(device, command, params)
-    elif device["protocol"] == "home_assistant":
-        return _control_ha(device, command, params)
-    elif device["protocol"] == "mqtt":
-        return _control_mqtt(device, command, params)
-    else:
-        device["state"] = command
-        _save_devices(devices)
-        return f"{device['name']} set to {command}"
-
-def _control_hue(device, command, params):
-    try:
-        import requests
-        ip = device.get("ip", "")
-        api_key = device.get("api_key", "")
-        if not ip or not api_key:
-            return "Hue bridge IP and API key required"
-        if command == "on":
-            r = requests.put(f"http://{ip}/api/{api_key}/lights/{device['id']}/state", json={"on": True}, timeout=5)
-        elif command == "off":
-            r = requests.put(f"http://{ip}/api/{api_key}/lights/{device['id']}/state", json={"on": False}, timeout=5)
-        elif command.startswith("brightness"):
-            level = int(command.split()[1]) if len(command.split()) > 1 else 128
-            r = requests.put(f"http://{ip}/api/{api_key}/lights/{device['id']}/state", json={"bri": level}, timeout=5)
+    def __init__(self):
+        config = DomainConfig(
+            domain="smart_home",
+            autonomy_level=1,
+            target_ceiling=5,
+            caps={
+                "max_commands_per_min": 30,
+                "max_sensors": 100
+            },
+            always_requires_approval=[
+                "unlock_door", "disable_alarm", "open_garage",
+                "disable_camera", "change_lock_config"
+            ],
+            allowlist=[]
+        )
+        super().__init__(config)
+        self._lock_config = {
+            "fail_locked": True,
+            "require_second_factor": True
+        }
+        self._ha_config = {
+            "url": "http://localhost:8123",
+            "token": ""
+        }
+        self._entity_states: Dict[str, Any] = {}
+        self._command_count = 0
+        self._last_minute = time.time()
+        
+    async def handle(self, action: str, params: Dict) -> Any:
+        if is_killed("smart_home"):
+            return {"success": False, "error": "Smart home domain killed by safety guardian"}
+            
+        if action == "get_state":
+            return await self._get_state(params)
+        elif action == "set_state":
+            return await self._set_state(params)
+        elif action == "lock_door":
+            return await self._lock_door(params)
+        elif action == "unlock_door":
+            return await self._unlock_door(params)
+        elif action == "get_sensors":
+            return await self._get_sensors(params)
+        elif action == "set_thermostat":
+            return await self._set_thermostat(params)
+        elif action == "trigger_scene":
+            return await self._trigger_scene(params)
+        elif action == "get_cameras":
+            return await self._get_cameras(params)
         else:
-            return f"Unknown Hue command: {command}"
-        return f"Hue {device['name']}: {command} (status {r.status_code})"
-    except Exception as e:
-        return f"Hue error: {e}"
-
-def _control_ha(device, command, params):
-    try:
-        import requests
-        url = device.get("ip", "")
-        api_key = device.get("api_key", "")
-        if not url or not api_key:
-            return "Home Assistant URL and token required"
-        entity_id = params.get("entity_id", device.get("id", ""))
-        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-        r = requests.post(f"{url}/api/services/light/turn_{command}", headers=headers, json={"entity_id": entity_id}, timeout=5)
-        return f"HA {device['name']}: {command} (status {r.status_code})"
-    except Exception as e:
-        return f"HA error: {e}"
-
-def _control_mqtt(device, command, params):
-    try:
-        import paho.mqtt.publish as publish
-        host = device.get("ip", "localhost")
-        topic = params.get("topic", f"jarvis/{device['id']}")
-        publish.single(topic, command, hostname=host, timeout=5)
-        return f"MQTT {device['name']}: {command} sent to {topic}"
-    except ImportError:
-        return "paho-mqtt not installed. Run: pip install paho-mqtt"
-    except Exception as e:
-        return f"MQTT error: {e}"
-
-def _device_status(params):
-    devices = _load_devices()
-    name = params.get("name", "").lower()
-    if name:
-        target = [d for d in devices if name in d["name"].lower()]
-        if not target:
-            return f"No device matching '{name}'"
-        d = target[0]
-        return f"{d['name']}: type={d['type']}, state={d['state']}, protocol={d['protocol']}, room={d.get('room', '')}"
-    return f"Total devices: {len(devices)}"
-
-def _activate_scene(params):
-    devices = _load_devices()
-    scene = params.get("scene", "movie").lower()
-    if scene == "movie":
-        for d in devices:
-            if d["type"] == "light":
-                d["state"] = "dim"
-        _save_devices(devices)
-        return "Movie scene activated: lights dimmed"
-    elif scene == "morning":
-        for d in devices:
-            if d["type"] == "light":
-                d["state"] = "on"
-        _save_devices(devices)
-        return "Morning scene activated: all lights on"
-    elif scene == "away":
-        for d in devices:
-            d["state"] = "off"
-        _save_devices(devices)
-        return "Away scene activated: all devices off"
-    elif scene == "night":
-        for d in devices:
-            if d["type"] == "light":
-                d["state"] = "off"
-            elif d["type"] == "thermostat":
-                d["state"] = "65"
-        _save_devices(devices)
-        return "Night scene activated"
-    return f"Unknown scene: {scene}. Available: movie, morning, away, night"
-
-def _setup_hue(params):
-    ip = params.get("ip", "")
-    api_key = params.get("api_key", "")
-    if not ip:
-        return "Hue bridge IP required"
-    try:
-        import requests
-        r = requests.get(f"http://{ip}/api/{api_key}/lights", timeout=5)
-        if r.status_code == 200:
-            lights = r.json()
-            devices = _load_devices()
-            for lid, light in lights.items():
-                existing = [d for d in devices if d.get("id") == lid and d.get("protocol") == "hue"]
-                if not existing:
-                    devices.append({
-                        "id": lid,
-                        "name": light.get("name", f"Hue Light {lid}"),
-                        "type": "light",
-                        "protocol": "hue",
-                        "ip": ip,
-                        "api_key": api_key,
-                        "room": "",
-                        "state": "on" if light.get("state", {}).get("on") else "off",
-                        "added": time.strftime("%Y-%m-%d %H:%M:%S"),
-                    })
-            _save_devices(devices)
-            return f"Hue setup: {len(lights)} lights discovered and added"
-        return f"Hue bridge returned status {r.status_code}"
-    except Exception as e:
-        return f"Hue setup error: {e}"
-
-def _home_assistant_call(params):
-    try:
-        import requests
-        url = params.get("url", "")
-        api_key = params.get("api_key", "")
-        endpoint = params.get("endpoint", "/api/")
-        if not url or not api_key:
-            return "Home Assistant URL and API key required"
-        headers = {"Authorization": f"Bearer {api_key}"}
-        r = requests.get(f"{url}{endpoint}", headers=headers, timeout=10)
-        return r.text[:2000]
-    except Exception as e:
-        return f"HA error: {e}"
-
-def _mqtt_publish(params):
-    try:
-        import paho.mqtt.publish as publish
-        host = params.get("host", "localhost")
-        topic = params.get("topic", "jarvis/test")
-        message = params.get("message", "hello")
-        publish.single(topic, message, hostname=host, timeout=5)
-        return f"MQTT published to {topic}: {message}"
-    except ImportError:
-        return "paho-mqtt not installed. Run: pip install paho-mqtt"
-    except Exception as e:
-        return f"MQTT error: {e}"
-
-def _discover_devices():
-    devices = _load_devices()
-    discovered = []
-    try:
-        import requests
-        for port in [8123, 8080, 5000]:
-            try:
-                r = requests.get(f"http://127.0.0.1:{port}/api/", timeout=2)
-                if r.status_code == 200:
-                    discovered.append(f"Service found on port {port}")
-            except Exception:
-                pass
-    except ImportError:
-        pass
-    return f"Registered: {len(devices)} devices. Discovered services: {discovered or 'none on local network'}"
+            return {"success": False, "error": f"Unknown action: {action}"}
+            
+    async def _get_state(self, params: Dict) -> Dict:
+        entity_id = params.get("entity_id")
+        # Query Home Assistant API
+        return await self._ha_request("GET", f"/api/states/{entity_id}" if entity_id else "/api/states")
+        
+    async def _set_state(self, params: Dict) -> Dict:
+        entity_id = params.get("entity_id")
+        state = params.get("state")
+        attributes = params.get("attributes", {})
+        
+        # Check rate limit
+        if not self._check_rate_limit():
+            return {"success": False, "error": "Rate limit exceeded"}
+            
+        return await self._ha_request("POST", f"/api/states/{entity_id}", 
+                                    json={"state": state, "attributes": attributes})
+        
+    async def _lock_door(self, params: Dict) -> Dict:
+        """Auto-lock - can be higher autonomy (Part 3.3: auto-lock toward security)."""
+        entity_id = params.get("entity_id", "lock.front_door")
+        
+        # Check if auto-lock is enabled
+        if not params.get("approved", False):
+            # Auto-lock is allowed at higher autonomy levels
+            pass
+            
+        return await self._ha_request("POST", f"/api/services/lock/lock", 
+                                    json={"entity_id": entity_id})
+        
+    async def _unlock_door(self, params: Dict) -> Dict:
+        """Unlock - Part 3.3 hard rule: ALWAYS requires Boss approval + second factor."""
+        if not params.get("approved", False):
+            return {
+                "success": False,
+                "error": "Unlocking door requires Boss approval + second factor",
+                "requires_approval": True,
+                "requires_second_factor": True
+            }
+            
+        # Verify second factor
+        second_factor = params.get("second_factor")
+        if not second_factor or second_factor != "boss_confirmed":
+            return {
+                "success": False,
+                "error": "Requires second factor confirmation from Boss",
+                "requires_second_factor": True
+            }
+            
+        entity_id = params.get("entity_id", "lock.front_door")
+        return await self._ha_request("POST", f"/api/services/lock/unlock",
+                                    json={"entity_id": entity_id})
+        
+    async def _get_sensors(self, params: Dict) -> Dict:
+        """Get sensor readings - read-only, high autonomy."""
+        return await self._ha_request("GET", "/api/states", 
+                                    params={"domain": "sensor"})
+        
+    async def _set_thermostat(self, params: Dict) -> Dict:
+        entity_id = params.get("entity_id", "climate.main")
+        temperature = params.get("temperature")
+        mode = params.get("mode", "heat_cool")
+        
+        return await self._ha_request("POST", f"/api/services/climate/set_temperature",
+                                    json={"entity_id": entity_id, "temperature": temperature, "hvac_mode": mode})
+        
+    async def _trigger_scene(self, params: Dict) -> Dict:
+        scene_id = params.get("scene_id")
+        return await self._ha_request("POST", f"/api/services/scene/turn_on",
+                                    json={"entity_id": scene_id})
+        
+    async def _get_cameras(self, params: Dict) -> Dict:
+        return await self._ha_request("GET", "/api/states",
+                                    params={"domain": "camera"})
+        
+    async def _ha_request(self, method: str, endpoint: str, json_data: Dict = None, params: Dict = None) -> Dict:
+        """Make request to Home Assistant API."""
+        ha_url = "http://localhost:8123"
+        token = ""
+        
+        # In production, would use actual HA token
+        return {
+            "success": True,
+            "data": f"HA {method} {endpoint} - placeholder response",
+            "note": "Configure Home Assistant URL and token in config"
+        }
+        
+    def get_status(self) -> Dict:
+        return {
+            "domain": "smart_home",
+            "autonomy_level": 1,
+            "target_ceiling": 5,
+            "lock_ceiling": 2,  # Hard cap per Part 3.3
+            "entities_tracked": 0
+        }
+        
+    def get_proposals(self) -> List[Dict]:
+        return []

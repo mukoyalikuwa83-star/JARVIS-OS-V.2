@@ -1,7 +1,10 @@
 import subprocess, sys, os
+from pathlib import Path
 
-PYTHON = r'C:\Users\2025\OneDrive\Desktop\JARVIS-OS-V.2-main\JARVIS-OS-V.2-main\.venv\Scripts\python.exe'
-BASE = r'C:\Users\2025\OneDrive\Desktop\JARVIS-OS-V.2-main\JARVIS-OS-V.2-main'
+BASE = str(Path(__file__).resolve().parent)
+PYTHON = str(Path(BASE) / '.venv' / 'Scripts' / 'python.exe')
+if not Path(PYTHON).exists():
+    PYTHON = sys.executable
 TIMEOUT = 25
 
 test_files = [

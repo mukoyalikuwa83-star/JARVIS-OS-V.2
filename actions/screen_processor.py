@@ -41,6 +41,12 @@ except ImportError:
 try:
     import mss
     import mss.tools
+    # mss >= 10 deprecated the module-level mss() function. Use the class directly.
+    try:
+        from mss import mss as _MSS_CLS  # modern: class is callable in some versions
+        _mss_session = _MSS_CLS  # type: ignore[assignment]
+    except Exception:
+        _mss_session = mss.mss
     _MSS = True
 except ImportError:
     _MSS = False
@@ -132,7 +138,7 @@ def _capture_screen() -> tuple[bytes, str]:
     if not _MSS:
         raise RuntimeError("mss is not installed. Run: pip install mss")
 
-    with mss.mss() as sct:
+    with _mss_session() as sct:
         monitors = sct.monitors          # [0] = all combined, [1..n] = real screens
         target   = monitors[1] if len(monitors) > 1 else monitors[0]
         shot     = sct.grab(target)

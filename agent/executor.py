@@ -49,7 +49,7 @@ def _run_generated_code(description: str, speak: Callable | None = None) -> str:
     downloads = home / "Downloads"
     documents = home / "Documents"
 
-    if not desktop.exists():
+    if not desktop.exists() and sys.platform == "win32":
         try:
             import winreg
             key     = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
@@ -60,7 +60,7 @@ def _run_generated_code(description: str, speak: Callable | None = None) -> str:
 
     genai.configure(api_key=_get_api_key())
     model = genai.GenerativeModel(
-        model_name="gemini-3.6-flash",
+        model_name="gemini-2.0-flash",
         system_instruction=(
             "You are an expert Python developer. "
             "Write clean, complete, working Python code. "

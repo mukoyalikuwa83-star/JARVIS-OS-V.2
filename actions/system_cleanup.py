@@ -1,5 +1,9 @@
-"""System cleanup and optimization: clear temp files, manage startup, defrag, etc."""
+"""System cleanup and optimization: clear temp files, manage startup, defrag, etc.
 
+Windows only — requires Windows-specific commands and paths.
+"""
+
+import sys
 import subprocess
 import os
 import shutil

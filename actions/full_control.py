@@ -1,11 +1,68 @@
-"""Full system control: settings, alarms, camera, smart home, all OS operations."""
+"""Full system control: settings, alarms, camera, smart home, all OS operations.
 
+Windows only — requires pywinauto, pycaw, comtypes, and Windows-specific commands.
+
+SAFETY NOTE:
+- Destructive actions (shutdown, restart, sleep, kill_process, empty_trash, close_app)
+  require explicit user confirmation via the 'confirmed' parameter.
+- All destructive action attempts are logged to .jarvis/safety_log.json.
+- SAFE_ACTIONS set contains read-only actions that never require confirmation.
+- Confirmation is enforced in handle() before dispatching to action handlers.
+"""
+
+import sys
 import subprocess
 import os
 import time
 import json
 import ctypes
 from pathlib import Path
+from datetime import datetime
+
+_SAFETY_LOG = Path(__file__).resolve().parent.parent / ".jarvis" / "safety_log.json"
+
+DESTRUCTIVE_ACTIONS = frozenset({
+    "shutdown", "restart", "sleep", "kill_process", "close_app",
+    "empty_trash", "set_env_var", "remove_startup", "delete_alarm",
+})
+
+SAFE_ACTIONS = frozenset({
+    "volume_up", "volume_down", "volume_set", "volume_mute",
+    "brightness_up", "brightness_down", "brightness_set",
+    "wifi_on", "wifi_off", "bluetooth_on", "bluetooth_off",
+    "airplane_mode", "do_not_disturb", "lock_screen",
+    "screenshot", "set_wallpaper", "open_settings", "open_control_panel",
+    "open_task_manager", "open_device_manager", "open_network_settings",
+    "open_sound_settings", "open_display_settings", "open_power_settings",
+    "open_bluetooth_settings", "set_alarm", "list_alarms",
+    "capture_camera", "list_cameras", "list_audio_devices",
+    "set_default_audio", "list_printers", "list_processes",
+    "open_app", "list_startup_apps", "list_env_vars",
+    "disk_info", "list_usb_devices", "list_drivers",
+    "check_updates", "system_info_full", "list_scheduled_tasks",
+    "create_system_restore", "list_user_accounts", "list_shares",
+    "open_camera_app", "open_calculator", "open_notepad",
+    "open_paint", "open_cmd", "open_powershell",
+})
+
+
+def _log_safety_event(action, target, approved, reason=""):
+    try:
+        log = []
+        if _SAFETY_LOG.exists():
+            log = json.loads(_SAFETY_LOG.read_text(encoding="utf-8"))
+        log.append({
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "action": action,
+            "target": target,
+            "approved": approved,
+            "reason": reason,
+        })
+        log = log[-500:]
+        _SAFETY_LOG.parent.mkdir(parents=True, exist_ok=True)
+        _SAFETY_LOG.write_text(json.dumps(log, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
 
 
 def _run(cmd, timeout=10):
@@ -21,6 +78,15 @@ def handle(parameters: dict) -> str:
     action = parameters.get("action", "")
     target = parameters.get("target", "")
     value = parameters.get("value", "")
+    confirmed = parameters.get("confirmed", False)
+
+    if action in DESTRUCTIVE_ACTIONS and not confirmed:
+        _log_safety_event(action, target, approved=False, reason="confirmation_required")
+        return (
+            f"BLOCKED: '{action}' is a destructive action and requires confirmation. "
+            f"Re-issue with 'confirmed=true' to proceed. "
+            f"Destructive actions: {', '.join(sorted(DESTRUCTIVE_ACTIONS))}"
+        )
 
     handlers = {
         "volume_up": _volume_up,
@@ -90,6 +156,8 @@ def handle(parameters: dict) -> str:
     handler = handlers.get(action)
     if handler:
         result = handler()
+        if action in DESTRUCTIVE_ACTIONS:
+            _log_safety_event(action, target, approved=True, reason="user_confirmed")
         return result if isinstance(result, str) else str(result)
     return f"Unknown system_control action: {action}. Available: {', '.join(sorted(handlers.keys()))}"
 
@@ -136,6 +204,8 @@ def _volume_set(val):
 
 
 def _get_current_volume():
+    if sys.platform != "win32":
+        return 50
     try:
         from ctypes import cast, POINTER
         from comtypes import CLSCTX_ALL
@@ -213,6 +283,8 @@ def _dnd_toggle():
 
 
 def _lock_screen():
+    if sys.platform != "win32":
+        return "Lock screen not available on this platform"
     ctypes.windll.user32.LockWorkStation()
     return "Screen locked"
 
@@ -244,6 +316,8 @@ def _take_screenshot():
 
 
 def _set_wallpaper(path):
+    if sys.platform != "win32":
+        return "Set wallpaper not available on this platform"
     try:
         ctypes.windll.user32.SystemParametersInfoW(20, 0, str(path), 3)
         return f"Wallpaper set to {path}"

@@ -1,0 +1,32 @@
+# Ruff linting configuration for JARVIS-OS
+line-length = 120
+target-version = "py311"
+
+[lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "UP",   # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "E741",   # ambiguous variable name (common in scientific code)
+    "F841",   # local variable assigned but never used (common in stubs)
+    "B008",   # function call in default argument (Pydantic patterns)
+    "B905",   # zip without strict= (too noisy)
+    "SIM105", # use contextlib.suppress (debatable)
+    "UP007",  # use X | Y for union types (runtime compat)
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["E", "F", "B"]  # be lenient in tests
+"scripts/*" = ["E", "F", "B"]
+"actions/presentations/*" = ["E", "F", "B"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

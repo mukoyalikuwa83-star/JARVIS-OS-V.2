@@ -1,5 +1,9 @@
-"""Self-control: autonomous background monitoring, proactive system management, health checks, auto-fix, pattern learning, schedule management, and self-healing."""
+"""Self-control: autonomous background monitoring, proactive system management, health checks, auto-fix, pattern learning, schedule management, and self-healing.
 
+Windows only — requires PowerShell and Windows-specific commands.
+"""
+
+import sys
 import subprocess
 import os
 import time

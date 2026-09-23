@@ -1,12 +1,20 @@
-"""Smart Screen Awareness — knows when to read screen, what to look at, understands context."""
+"""Smart Screen Awareness — knows when to read screen, what to look at, understands context.
+
+Windows only — requires ctypes.wintypes for window management.
+"""
 import time
 import hashlib
 import json
 import ctypes
-import ctypes.wintypes as wt
 from pathlib import Path
 from collections import deque
 from typing import Optional
+
+try:
+    import ctypes.wintypes as wt
+    _HAS_WINTYPES = True
+except ImportError:
+    _HAS_WINTYPES = False
 
 _AWARENESS_PATH = Path(__file__).resolve().parent.parent / ".jarvis" / "screen_awareness.json"
 
@@ -198,6 +206,8 @@ class ScreenAwareness:
 
     @staticmethod
     def get_active_window_title() -> str:
+        if not _HAS_WINTYPES:
+            return "Unknown"
         try:
             user32 = ctypes.windll.user32
             hwnd = user32.GetForegroundWindow()

@@ -293,31 +293,40 @@ def browser_control(parameters=None, player=None):
 def _open_url_pyautogui(url):
     if not _HAS_GUI_DEPS:
         return
-    try:
-        wins = gw.getAllTitles()
-        browser_win = None
-        for title in wins:
-            if any(b in title.lower() for b in ["chrome", "edge", "firefox", "brave", "opera"]):
-                browser_win = gw.getWindowsWithTitle(title)[0]
-                break
-        if browser_win:
-            if browser_win.isMinimized:
-                browser_win.restore()
-            browser_win.activate()
-            time.sleep(0.3)
-        pyautogui.hotkey("ctrl", "l")
-        time.sleep(0.15)
-        if _safe_clipboard_copy(url):
-            pyautogui.hotkey("ctrl", "v")
-        else:
-            pyautogui.typewrite(url, interval=0.01)
-        time.sleep(0.1)
-        pyautogui.press("enter")
-        time.sleep(1.5)
-    except Exception as e:
-        log.warning("pyautogui nav failed: %s", e)
-        import webbrowser
-        webbrowser.open(url)
+    import threading as _threading
+
+    def _do_nav():
+        try:
+            wins = gw.getAllTitles()
+            browser_win = None
+            for title in wins:
+                if any(b in title.lower() for b in ["chrome", "edge", "firefox", "brave", "opera"]):
+                    browser_win = gw.getWindowsWithTitle(title)[0]
+                    break
+            if browser_win:
+                if browser_win.isMinimized:
+                    browser_win.restore()
+                browser_win.activate()
+                time.sleep(0.3)
+            pyautogui.hotkey("ctrl", "l")
+            time.sleep(0.15)
+            if _safe_clipboard_copy(url):
+                pyautogui.hotkey("ctrl", "v")
+            else:
+                pyautogui.typewrite(url, interval=0.01)
+            time.sleep(0.1)
+            pyautogui.press("enter")
+            time.sleep(1.5)
+        except Exception as e:
+            log.warning("pyautogui nav failed: %s", e)
+            import webbrowser
+            webbrowser.open(url)
+
+    # WinError 258 / hung window activation can block forever. Never freeze
+    # the calling worker thread - run the nav in a bounded daemon helper.
+    worker = _threading.Thread(target=_do_nav, name="pyautogui-nav", daemon=True)
+    worker.start()
+    worker.join(timeout=8.0)
 
 
 def _focus_active():

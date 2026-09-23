@@ -1,6 +1,6 @@
 """Shared HTTP helper using curl instead of requests/urllib for reliability."""
 import subprocess
-import json
+import json as _json
 import os
 import time
 from pathlib import Path
@@ -49,7 +49,7 @@ def http_get(url, params=None, headers=None, timeout=20, retries=MAX_RETRIES):
     return last_err, -1
 
 
-def http_post(url, data=None, files=None, headers=None, timeout=30, form_type="multipart", retries=MAX_RETRIES):
+def http_post(url, data=None, files=None, headers=None, timeout=30, form_type="multipart", retries=MAX_RETRIES, json=None):
     _load_env()
     cmd = [CURL, "-s", "-m", str(timeout), "-X", "POST"]
     if headers:
@@ -58,7 +58,10 @@ def http_post(url, data=None, files=None, headers=None, timeout=30, form_type="m
     if files:
         for field, (fname, filepath, ctype) in files.items():
             cmd.extend(["-F", f"{field}=@{filepath};type={ctype}"])
-    if data:
+    if json is not None:
+        cmd.extend(["-H", "Content-Type: application/json"])
+        cmd.extend(["--data-binary", _json.dumps(json)])
+    elif data:
         if form_type == "urlencoded":
             for k, v in data.items():
                 cmd.extend(["--data-urlencode", f"{k}={v}"])

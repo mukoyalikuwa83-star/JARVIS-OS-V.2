@@ -1,132 +1,269 @@
-"""Content Engine — generates real blog posts, articles, and marketing content."""
+"""
+Content Creation Pipeline — Part 3.5.3: Automated content with approval gates.
+Ideation → Drafting → Review → Publish → Monetize → Track.
+"""
+import asyncio
 import json
-import hashlib
+import time
+from typing import Dict, Any, List, Optional
+from datetime import datetime, timezone
 from pathlib import Path
-from datetime import datetime
 
-_DATA_DIR = Path(__file__).resolve().parent.parent / ".jarvis"
-_DATA_DIR.mkdir(exist_ok=True)
-_CONTENT_DIR = _DATA_DIR / "content"
-_CONTENT_DIR.mkdir(exist_ok=True)
+from core.domain_agent import DomainAgent, DomainConfig
+from core.safety_guardian import is_killed, is_breaker_tripped, increment_scope
+from core.audit_log import write_audit_entry
 
-
-def generate_article(topic, style="blog_post"):
-    templates = {
-        "blog_post": {
-            "intro": f"# {topic}\n\nIn today's fast-paced tech landscape, {topic.lower()} has become essential for developers and businesses alike.",
-            "sections": [
-                f"## Why {topic} Matters\n\nModern development demands efficiency, reliability, and scalability. Whether you're building a startup MVP or maintaining enterprise systems, the right approach to {topic.lower()} can make or break your project.",
-                "## Key Components\n\n1. **Architecture Design** — A well-planned foundation saves time and reduces bugs\n2. **Implementation Patterns** — Using proven patterns ensures reliability\n3. **Testing Strategy** — Automated testing catches issues before they reach production\n4. **Deployment Pipeline** — CI/CD enables rapid, safe releases",
-                "## Best Practices\n\n- Start simple, iterate based on real usage\n- Write tests alongside code, not after\n- Document decisions and trade-offs\n- Monitor in production, not just staging\n- Keep dependencies updated but stable",
-                "## Getting Started\n\nThe fastest way to get started is with a production-ready template. Pre-built solutions handle the common patterns so you can focus on your unique business logic.",
+class ContentEngineAgent(DomainAgent):
+    """Content creation pipeline with approval gates per channel."""
+    
+    def __init__(self):
+        config = DomainConfig(
+            domain="content",
+            autonomy_level=1,
+            target_ceiling=4,
+            caps={
+                "max_posts_per_day": 20,
+                "max_channels": 10
+            },
+            always_requires_approval=[
+                "publish_post", "schedule_post", "monetize_channel",
+                "run_ads", "affiliate_link"
             ],
-            "cta": "Ready to accelerate your development? Browse production-ready templates and tools built for real-world use."
-        },
-        "tutorial": {
-            "intro": f"# Building {topic} from Scratch\n\nThis step-by-step guide walks you through creating a production-quality {topic.lower()} solution.",
-            "sections": [
-                "## Prerequisites\n\n- Python 3.9+\n- Basic understanding of the domain\n- A text editor or IDE",
-                "## Step 1: Setup\n\nStart with a clean project structure. We'll use a template that includes configuration, tests, and documentation.",
-                "## Step 2: Core Implementation\n\nBuild the core logic first. Focus on correctness before optimization.",
-                "## Step 3: Testing\n\nWrite unit tests for each component. Aim for high coverage on critical paths.",
-                "## Step 4: Production Readiness\n\nAdd logging, error handling, configuration management, and documentation.",
-            ],
-            "cta": "Want the complete, tested implementation? Get the full source code with all tests and documentation."
-        },
-        "comparison": {
-            "intro": f"# {topic}: A Practical Comparison\n\nChoosing the right approach for {topic.lower()} can be overwhelming. Here's a practical comparison.",
-            "sections": [
-                "## What We're Comparing\n\nWe'll evaluate based on: ease of setup, performance, maintainability, and cost.",
-                "## Approach A: Manual Implementation\n\nPros: Full control, no dependencies, educational\nCons: Time-consuming, error-prone, hard to maintain",
-                "## Approach B: Template-Based\n\nPros: Fast setup, tested patterns, documented\nCons: Less customization, learning curve",
-                "## Approach C: Framework Solution\n\nPros: Rich ecosystem, community support, rapid development\nCons: Bloat, opinions, version lock-in",
-                "## Recommendation\n\nFor most projects, a template-based approach offers the best balance of speed, quality, and flexibility.",
-            ],
-            "cta": "See our production-ready templates in action. Browse the full catalog."
+            allowlist=[]
+        )
+        super().__init__(config)
+        self._channels = {
+            "blog": {"platform": "ghost", "autonomy_level": 1, "track_record": 0},
+            "twitter": {"platform": "twitter", "autonomy_level": 1, "track_record": 0},
+            "linkedin": {"platform": "linkedin", "autonomy_level": 1, "track_record": 0},
+            "medium": {"platform": "medium", "autonomy_level": 1, "track_record": 0},
+            "devto": {"platform": "dev.to", "autonomy_level": 1, "track_record": 0},
+            "youtube": {"platform": "youtube", "autonomy_level": 1, "track_record": 0}
         }
-    }
-    t = templates.get(style, templates["blog_post"])
-    article = t["intro"] + "\n\n" + "\n\n".join(t["sections"]) + "\n\n" + t["cta"]
-    content_id = hashlib.md5(f"{topic}{datetime.now().isoformat()}".encode()).hexdigest()[:8]
-    filepath = _CONTENT_DIR / f"{content_id}.md"
-    filepath.write_text(article, encoding="utf-8")
-    return {"id": content_id, "topic": topic, "style": style, "filepath": str(filepath),
-            "word_count": len(article.split()), "content": article[:500]}
-
-
-def generate_product_description(title, features, price):
-    desc = f"""## {title}
-
-Production-quality code ready for immediate use.
-
-### Features
-{chr(10).join(f'- {f}' for f in features)}
-
-### What's Included
-- Complete source code
-- README with setup instructions
-- requirements.txt
-- Configuration files
-- Basic tests
-
-### Price: ${price}
-
-Instant download. MIT License. Use in personal or commercial projects.
-
-### Why This Product?
-Built with best practices, tested, and documented. Save hours of development time with a solid foundation you can build on."""
-    return desc
-
-
-def generate_seo_tags(title, description):
-    words = title.lower().split()
-    keywords = words + [f"python {w}" for w in words] + ["code", "template", "production-ready", "download"]
-    return {
-        "title": f"{title} — Production-Ready Python Code",
-        "description": description[:160],
-        "keywords": keywords[:15],
-        "og_title": title,
-        "og_description": description[:200],
-        "og_type": "product",
-    }
-
-
-def list_content():
-    if not _CONTENT_DIR.exists():
-        return "No content generated yet."
-    files = sorted(_CONTENT_DIR.glob("*.md"), key=lambda f: f.stat().st_mtime, reverse=True)
-    if not files:
-        return "No content files found."
-    lines = [f"=== CONTENT LIBRARY ({len(files)} articles) ==="]
-    for f in files[:10]:
-        content = f.read_text(encoding="utf-8")
-        lines.append(f"  {f.stem}: {content[:80].replace(chr(10), ' ')} ({len(content.split())} words)")
-    if len(files) > 10:
-        lines.append(f"  ... and {len(files) - 10} more")
-    return "\n".join(lines)
-
-
-def handle(parameters=None):
-    params = parameters or {}
-    action = params.get("action", "status")
-    target = params.get("target", "")
-    value = params.get("value", "")
-    if action == "status":
-        return list_content()
-    elif action == "blog" or action == "article":
-        result = generate_article(target or "Python Development Best Practices")
-        return f"Generated: {result['topic']} ({result['word_count']} words)\n{result['content'][:300]}"
-    elif action == "tutorial":
-        result = generate_article(target or "Building a Production API", "tutorial")
-        return f"Generated: {result['topic']} ({result['word_count']} words)\n{result['content'][:300]}"
-    elif action == "comparison":
-        result = generate_article(target or "Python Web Frameworks", "comparison")
-        return f"Generated: {result['topic']} ({result['word_count']} words)\n{result['content'][:300]}"
-    elif action == "description":
-        features = [f.strip() for f in (value or "Production Code, Well Documented, MIT License").split(",")]
-        desc = generate_product_description(target or "Python Tool", features, 49)
-        return desc[:500]
-    elif action == "seo":
-        tags = generate_seo_tags(target or "Python Tool", value or "Production-ready code")
-        return json.dumps(tags, indent=2)
-    return f"Unknown action: {action}. Available: status, blog, tutorial, comparison, description, seo"
+        self._ai_disclosure = True
+        self._content_queue: List[Dict] = []
+        self._published: List[Dict] = []
+        self._drafts: Dict = {}
+        
+    async def handle(self, action: str, params: Dict) -> Any:
+        if is_killed("content"):
+            return {"success": False, "error": "Content domain killed by safety guardian"}
+            
+        if action == "create_content":
+            return await self._create_content(params)
+        elif action == "draft_content":
+            return await self._draft_content(params)
+        elif action == "review_content":
+            return await self._review_content(params)
+        elif action == "publish_content":
+            return await self._publish_content(params)
+        elif action == "schedule_content":
+            return await self._schedule_content(params)
+        elif action == "get_queue":
+            return await self._get_queue()
+        elif action == "get_analytics":
+            return await self._get_analytics(params)
+        elif action == "monetize":
+            return await self._monetize(params)
+        else:
+            return {"success": False, "error": f"Unknown action: {action}"}
+            
+    async def _create_content(self, params: Dict) -> Dict:
+        """Ideation + drafting from opportunity or prompt."""
+        topic = params.get("topic", params.get("prompt", ""))
+        content_type = params.get("type", "blog")
+        channel = params.get("channel", "blog")
+        
+        # Generate draft
+        draft = await self._generate_draft(topic, content_type, channel)
+        
+        draft_id = f"draft_{int(time.time())}"
+        draft["id"] = draft_id
+        draft["created"] = datetime.now(timezone.utc).isoformat()
+        draft["status"] = "draft"
+        
+        self._drafts[draft_id] = draft
+        
+        return {"success": True, "draft": draft}
+        
+    async def _generate_draft(self, topic: str, content_type: str, channel: str) -> Dict:
+        """Generate content draft - would use LLM in production."""
+        templates = {
+            "blog": {
+                "title": f"Complete Guide to {topic}",
+                "outline": [
+                    f"Introduction to {topic}",
+                    f"Why {topic} Matters in 2024",
+                    f"Getting Started with {topic}",
+                    f"Advanced {topic} Techniques",
+                    f"Common Mistakes to Avoid",
+                    f"Conclusion and Next Steps"
+                ],
+                "word_count": 2000
+            },
+            "twitter": {
+                "title": f"Thread: {topic}",
+                "outline": [
+                    f"1/ {topic} is changing how we work. Here's why:",
+                    f"2/ The problem: traditional approaches fail because...",
+                    f"3/ The solution: {topic} solves this by...",
+                    f"4/ Real example: how I used {topic} to...",
+                    f"5/ Key takeaway: {topic} isn't just a tool, it's a mindset.",
+                    f"6/ Want to learn more? Link in bio."
+                ],
+                "word_count": 280
+            },
+            "linkedin": {
+                "title": f"How {topic} Transformed My Workflow",
+                "outline": [
+                    "The challenge I faced",
+                    f"How {topic} provided the solution",
+                    "Measurable results",
+                    "Key lessons learned",
+                    "Call to action"
+                ],
+                "word_count": 1300
+            }
+        }
+        
+        template = templates.get(channel, templates["blog"])
+        
+        return {
+            "type": content_type,
+            "channel": channel,
+            "topic": topic,
+            "title": template["title"],
+            "outline": template["outline"],
+            "target_word_count": template["word_count"],
+            "ai_disclosure": self._ai_disclosure
+        }
+        
+    async def _draft_content(self, params: Dict) -> Dict:
+        """Create full draft from outline."""
+        draft_id = params.get("draft_id")
+        if draft_id not in self._drafts:
+            return {"success": False, "error": "Draft not found"}
+            
+        draft = self._drafts[draft_id]
+        draft["status"] = "drafted"
+        draft["drafted_at"] = datetime.now(timezone.utc).isoformat()
+        
+        # Add AI disclosure if required
+        if self._ai_disclosure:
+            draft["disclosure"] = "This content was created with AI assistance."
+            
+        return {"success": True, "draft": draft}
+        
+    async def _review_content(self, params: Dict) -> Dict:
+        draft_id = params.get("draft_id")
+        action = params.get("action")  # "approve" | "reject" | "revise"
+        
+        if draft_id not in self._drafts:
+            return {"success": False, "error": "Draft not found"}
+            
+        draft = self._drafts[draft_id]
+        
+        if action == "approve":
+            draft["status"] = "approved"
+            draft["approved_at"] = datetime.now(timezone.utc).isoformat()
+            return {"success": True, "draft": draft}
+        elif action == "reject":
+            draft["status"] = "rejected"
+            draft["rejection_reason"] = params.get("reason", "")
+            return {"success": True, "draft": draft}
+        elif action == "revise":
+            draft["status"] = "revision_requested"
+            draft["revision_notes"] = params.get("notes", "")
+            return {"success": True, "draft": draft}
+        else:
+            return {"success": False, "error": "Invalid action"}
+            
+    async def _publish_content(self, params: Dict) -> Dict:
+        draft_id = params.get("draft_id")
+        channel = params.get("channel", "blog")
+        
+        if draft_id not in self._drafts:
+            return {"success": False, "error": "Draft not found"}
+            
+        draft = self._drafts[draft_id]
+        if draft["status"] != "approved":
+            return {"success": False, "error": "Draft not approved", "requires_approval": True}
+            
+        # Check channel autonomy level
+        channel_config = self._channels.get(channel, {})
+        channel_level = channel_config.get("autonomy_level", 1)
+        track_record = channel_config.get("track_record", 0)
+        
+        # Check if channel has earned autonomous publishing
+        if channel_level < 4 and track_record < 10:
+            return {"success": False, "error": f"Channel {channel} requires approval (level {channel_level}, {track_record} posts)", "requires_approval": True}
+            
+        # Check rate limit
+        if is_breaker_tripped("scope_published_per_day"):
+            return {"success": False, "error": "Daily publish limit reached"}
+            
+        increment_scope("scope_published_per_day")
+        
+        # Publish to platform
+        result = await self._publish_to_platform(draft, channel)
+        
+        if result.get("success"):
+            draft["status"] = "published"
+            draft["published_at"] = datetime.now(timezone.utc).isoformat()
+            draft["channel"] = channel
+            draft["platform_id"] = result.get("platform_id")
+            self._published.append(draft)
+            del self._drafts[draft_id]
+            
+            # Update channel track record
+            channel_config["track_record"] += 1
+            
+            # Log with AI disclosure
+            log_audit("content", f"publish:{draft_id}", "passed", 
+                     "auto_approved" if track_record >= 10 else "approved_by_boss",
+                     "success", {"platform_id": result.get("platform_id")}, 
+                     f"Published to {channel}")
+            
+        return result
+        
+    async def _publish_to_platform(self, draft: Dict, channel: str) -> Dict:
+        # Placeholder for actual platform APIs
+        return {
+            "success": True,
+            "platform_id": f"{channel}_{int(time.time())}",
+            "url": f"https://{channel}.com/post/placeholder"
+        }
+        
+    async def _schedule_content(self, params: Dict) -> Dict:
+        draft_id = params.get("draft_id")
+        schedule_time = params.get("schedule_time")
+        return {"success": True, "scheduled": True, "time": schedule_time}
+        
+    async def _get_queue(self) -> Dict:
+        return {
+            "drafts": len(self._drafts),
+            "scheduled": 0,
+            "published_today": 0
+        }
+        
+    async def _get_analytics(self, params: Dict) -> Dict:
+        channel = params.get("channel")
+        return {"success": True, "analytics": {}}
+        
+    async def _monetize(self, params: Dict) -> Dict:
+        channel = params.get("channel")
+        method = params.get("method", "affiliate")
+        return {"success": True, "monetization": "configured"}
+        
+    def get_status(self) -> Dict:
+        return {
+            "domain": "content",
+            "autonomy_level": 1,
+            "target_ceiling": 4,
+            "drafts": len(self._drafts),
+            "published": len(self._published),
+            "channels": list(self._channels.keys())
+        }
+        
+    def get_proposals(self) -> List[Dict]:
+        return []

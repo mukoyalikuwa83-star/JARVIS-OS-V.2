@@ -257,16 +257,30 @@ def _run_full_cycle() -> str:
     results.append(f"[BRAIN] Phase '{phase}' — target: {target_desc[:60]}")
 
     try:
-        # ALWAYS: build a fresh product (money engine)
+        # ALWAYS: build a fresh product (money engine). Guard against flooding
+        # the store with near-duplicate junk: skip if this category was already
+        # delivered recently.
         wt, desc = _choose_product()
         if target_desc and phase != "research":
             desc = target_desc
-        build_result = aw.do_work(wt, desc)
-        results.append(f"[WORKER] Built {wt}: {build_result[:70]}")
+        try:
+            from actions.autonomous_worker import AutonomousWorker as _AW
+            _probe = _AW()
+            _recent = [d for d in _probe._jobs.get("delivered", [])
+                       if str(d.get("id", ""))
+                       and (d.get("time") or d.get("desc") or "")]
+            _dup_cats = {d.get("type", "").lower() for d in _recent[-6:]}
+            if wt.lower().replace("-", "_") in _dup_cats and len(_recent) >= 6:
+                results.append("[WORKER] Skip build: category already produced this round")
+            else:
+                build_result = aw.do_work(wt, desc)
+                results.append(f"[WORKER] Built {wt}: {build_result[:70]}")
+        except Exception as _be:
+            results.append(f"[WORKER] Build skip check failed: {_be}")
     except Exception as e:
         results.append(f"[WORKER] Build error: {e}")
 
-    # APPLY phase: find + auto-apply on platforms
+    # APPLY phase: find jobs and draft proposal outlines (requires human to send)
     if phase in ("apply", "build"):
         try:
             for plat in ["freelancer", "upwork", "fiverr"]:
@@ -275,9 +289,6 @@ def _run_full_cycle() -> str:
                 try:
                     jr = aw.find_jobs(plat, "python")
                     results.append(f"[WORKER] {plat} jobs: {jr[:60]}")
-                    jr_l = jr.lower()
-                    if "auto-submitted" in jr_l or "found" in jr_l:
-                        results.append(f"[WORKER] {plat}: proposals auto-submitted")
                 except Exception as e:
                     results.append(f"[WORKER] {plat} scan: {e}")
         except Exception as e:
@@ -319,6 +330,17 @@ def _run_full_cycle() -> str:
         results.append(f"[WORKER] Deploy: {str(dr).split(chr(10))[0][:55]}")
     except Exception as e:
         results.append(f"[WORKER] Deploy error: {e}")
+
+    # ALWAYS: check real Gumroad sales and record verified income
+    try:
+        from actions.gumroad_api import record_gumroad_sales
+        sales_info = record_gumroad_sales()
+        if sales_info.get("recorded"):
+            results.append(f"[WORKER] Gumroad sales recorded: {sales_info['recorded']} new verified payments")
+        elif not sales_info.get("error"):
+            results.append(f"[WORKER] Gumroad sales: {sales_info['checked']} checked, 0 new")
+    except Exception:
+        pass
 
     try:
         pending = aw.get_pending()

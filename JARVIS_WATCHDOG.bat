@@ -24,9 +24,10 @@ echo [%date% %time%] Starting JARVIS (restart #%RESTARTS%)...
 
 cd /d "%JARVIS_DIR%"
 set "PYTHONIOENCODING=utf-8"
+set "PYTHONUNBUFFERED=1"
 set "JARVIS_AUTO_START=1"
 
-"%PYTHON%" main.py 2>> "%LOG%"
+"%PYTHON%" -u main.py 2>> "%LOG%"
 set "EXIT_CODE=%ERRORLEVEL%"
 
 echo [%date% %time%] JARVIS exited with code %EXIT_CODE% >> "%LOG%"

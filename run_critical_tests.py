@@ -1,7 +1,9 @@
 import sys, os, unittest, signal
+from pathlib import Path
 
-sys.path.insert(0, r'C:\Users\2025\OneDrive\Desktop\JARVIS-OS-V.2-main\JARVIS-OS-V.2-main')
-os.chdir(r'C:\Users\2025\OneDrive\Desktop\JARVIS-OS-V.2-main\JARVIS-OS-V.2-main')
+_BASE = str(Path(__file__).resolve().parent)
+sys.path.insert(0, _BASE)
+os.chdir(_BASE)
 
 class TimeoutTestResult(unittest.TextTestResult):
     def __init__(self, *args, **kwargs):

@@ -1,4 +1,12 @@
-"""Money Makers — autonomous income generation: crypto monitoring, content creation, social media, and more."""
+"""Money Makers — autonomous income generation: crypto monitoring, content creation, social media, and more.
+
+SAFETY NOTE:
+- Financial actions (portfolio_add, social_post, content_publish) require
+  explicit confirmation via the 'confirmed' parameter before execution.
+- All financial action attempts are logged to .jarvis/safety_log.json.
+- Real financial transactions (buy/sell/transfer) are BLOCKED without confirmation.
+- Rate limiting prevents excessive external API calls.
+"""
 
 import subprocess
 import os
@@ -16,8 +24,52 @@ _CONTENT_QUEUE = _DATA_DIR / "content_queue.json"
 _SOCIAL_LOG = _DATA_DIR / "social_log.json"
 _CRYPTO_ALERTS = _DATA_DIR / "crypto_alerts.json"
 _EARNINGS = _DATA_DIR / "earnings.json"
+_SAFETY_LOG = _DATA_DIR / "safety_log.json"
 
 NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+
+FINANCIAL_ACTIONS = frozenset({
+    "portfolio_add", "portfolio_rebalance", "social_post",
+    "content_publish", "track_earning",
+})
+
+# Actions that auto-open external websites in the user's browser.
+# These must NOT run silently - they spam tabs (upwork/fiverr/freelancer).
+BROWSER_ACTIONS = frozenset({
+    "freelance_opportunities",
+})
+
+_last_api_call = {}
+RATE_LIMIT_SECONDS = 2
+
+
+def _rate_limit_check(action_name):
+    now = time.time()
+    last = _last_api_call.get(action_name, 0)
+    if now - last < RATE_LIMIT_SECONDS:
+        return False, f"Rate limited: wait {RATE_LIMIT_SECONDS - (now - last):.1f}s"
+    _last_api_call[action_name] = now
+    return True, ""
+
+
+def _log_safety_event(action, target, approved, reason=""):
+    try:
+        log = []
+        if _SAFETY_LOG.exists():
+            log = json.loads(_SAFETY_LOG.read_text(encoding="utf-8"))
+        log.append({
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "module": "money_makers",
+            "action": action,
+            "target": str(target)[:200],
+            "approved": approved,
+            "reason": reason,
+        })
+        log = log[-500:]
+        _SAFETY_LOG.parent.mkdir(parents=True, exist_ok=True)
+        _SAFETY_LOG.write_text(json.dumps(log, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
 
 
 def _run(cmd, timeout=15):
@@ -53,6 +105,30 @@ def handle(parameters: dict) -> str:
     action = parameters.get("action", "")
     target = parameters.get("target", "")
     value = parameters.get("value", "")
+    confirmed = parameters.get("confirmed", False)
+
+    if action in FINANCIAL_ACTIONS and not confirmed:
+        _log_safety_event(action, target, approved=False, reason="confirmation_required")
+        return (
+            f"BLOCKED: '{action}' is a financial action and requires confirmation. "
+            f"Re-issue with 'confirmed=true' to proceed. "
+            f"Financial actions: {', '.join(sorted(FINANCIAL_ACTIONS))}"
+        )
+
+    if action in BROWSER_ACTIONS and not confirmed:
+        _log_safety_event(action, target, approved=False, reason="browser_confirmation_required")
+        return (
+            f"BLOCKED: '{action}' would open external websites in your browser "
+            f"(upwork/fiverr/freelancer) and is blocked unless you explicitly ask. "
+            f"Re-issue with 'confirmed=true' to open the gig site tabs. "
+            f"No tabs were opened."
+        )
+
+    if action in ("crypto_prices", "crypto_alert_check", "freelance_opportunities"):
+        ok, msg = _rate_limit_check(action)
+        if not ok:
+            return msg
+
     handlers = {
         "crypto_status": _crypto_status,
         "crypto_prices": _crypto_prices,
@@ -72,11 +148,13 @@ def handle(parameters: dict) -> str:
         "auto_content_pipeline": _auto_content_pipeline,
         "research_monetization": lambda: _research_monetization(target),
         "project_ideas": _project_ideas,
-        "freelance_opportunities": _freelance_opportunities,
+        "freelance_opportunities": lambda: _freelance_opportunities(confirmed),
     }
     handler = handlers.get(action)
     if handler:
         result = handler()
+        if action in FINANCIAL_ACTIONS:
+            _log_safety_event(action, target, approved=True, reason="user_confirmed")
         return result if isinstance(result, str) else str(result)
     return f"Unknown money_makers action: {action}. Available: {', '.join(sorted(handlers.keys()))}"
 
@@ -115,20 +193,42 @@ def _crypto_status() -> str:
 
 def _crypto_prices() -> str:
     try:
-        out, rc = _run(["curl", "-s", "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,dogecoin&vs_currencies=usd&include_24hr_change=true"], timeout=10)
+        out, rc = _run(["curl", "-s", "https://api.coinbase.com/v2/prices/BTC-USD/spot"], timeout=10)
         if rc == 0:
             data = json.loads(out)
+            btc_price = data.get("data", {}).get("amount", 0)
             lines = ["=== LIVE CRYPTO PRICES ==="]
-            for coin, info in data.items():
-                price = info.get("usd", 0)
-                change = info.get("usd_24h_change", 0)
-                arrow = "+" if change >= 0 else ""
-                lines.append(f"  {coin.upper()}: ${price:,.2f} ({arrow}{change:.1f}%)")
+            lines.append(f"  BTC: ${float(btc_price):,.2f}")
+            for sym in ['ETH-USD', 'SOL-USD', 'DOGE-USD']:
+                try:
+                    out2, rc2 = _run(["curl", "-s", f"https://api.coinbase.com/v2/prices/{sym}/spot"], timeout=10)
+                    if rc2 == 0:
+                        d2 = json.loads(out2)
+                        price = float(d2.get("data", {}).get("amount", 0))
+                        lines.append(f"  {sym.replace('-USD', '')}: ${price:,.4f}")
+                except Exception:
+                    pass
             return "\n".join(lines)
     except Exception:
         pass
-
-    return """Crypto prices (fallback):
+    # Auto-recovery: Binance fallback
+    try:
+        lines = ["=== LIVE CRYPTO PRICES (Binance fallback) ==="]
+        for sym in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'DOGEUSDT']:
+            out, rc = _run(["curl", "-s", f"https://api.binance.com/api/v3/ticker/price?symbol={sym}"], timeout=10)
+            if rc == 0:
+                try:
+                    d = json.loads(out)
+                    name = sym.replace("USDT", "")
+                    price = float(d.get("price", 0))
+                    lines.append(f"  {name}: ${price:,.4f}")
+                except Exception:
+                    pass
+        if len(lines) > 1:
+            return "\n".join(lines)
+    except Exception:
+        pass
+    return """Crypto prices (auto-recovery):
   BTC: Check coinmarketcap.com
   Use 'curl' to fetch live prices when online"""
 
@@ -529,12 +629,17 @@ def _project_ideas() -> str:
 The AI can build ANY of these projects automatically."""
 
 
-def _freelance_opportunities() -> str:
+def _freelance_opportunities(confirmed=False) -> str:
     urls = {
         "upwork": "https://www.upwork.com/nx/search/jobs/?q=python%20automation&sort=relevance",
         "fiverr": "https://www.fiverr.com/search/gigs?query=python+automation&source=top-bar&ref_ctx_id=&search_in=everywhere",
         "freelancer": "https://www.freelancer.com/jobs/python/?status=open",
     }
+    if not confirmed:
+        lines = ["FREELANCE OPPORTUNITY SEARCH LINKS (not opened - ask me to open with confirmed=true):"]
+        for name, url in urls.items():
+            lines.append(f"  {name}: {url}")
+        return "\n".join(lines)
     opened = []
     skipped = []
     for name, url in urls.items():

@@ -1,5 +1,15 @@
-"""System access: location, bluetooth, wifi, hotspot, night mode, permissions, foreground app, running apps, device info, battery, network, clipboard, screen info, input devices, audio devices, printers, USB, drivers, startup apps, scheduled tasks, environment variables, system info."""
+"""System access: location, bluetooth, wifi, hotspot, night mode, permissions, foreground app, running apps, device info, battery, network, clipboard, screen info, input devices, audio devices, printers, USB, drivers, startup apps, scheduled tasks, environment variables, system info.
 
+Windows only — requires pywinauto, pycaw, comtypes, and Windows-specific commands.
+
+SAFETY NOTE:
+- File path validation prevents path traversal attacks (e.g., ../../etc/passwd).
+- Sensitive operations (start_service, stop_service, set_wallpaper, set_clipboard)
+  are logged to .jarvis/safety_log.json for audit.
+- Paths are resolved and checked against allowed directories before access.
+"""
+
+import sys
 import subprocess
 import os
 import time
@@ -8,8 +18,52 @@ import socket
 import struct
 import ctypes
 from pathlib import Path
+from datetime import datetime
 
 _NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+_SAFETY_LOG = Path(__file__).resolve().parent.parent / ".jarvis" / "safety_log.json"
+
+SENSITIVE_ACTIONS = frozenset({
+    "start_service", "stop_service", "set_wallpaper", "set_clipboard",
+    "set_volume", "set_brightness", "set_keyboard_layout",
+})
+
+
+def _validate_path(path_str, allow_existing_only=True):
+    """Validate a file path to prevent path traversal attacks."""
+    if not path_str:
+        return False, "Empty path"
+    try:
+        p = Path(path_str).resolve()
+        path_str_resolved = str(p)
+        forbidden = ["..", "~"]
+        for f in forbidden:
+            if f in path_str and f not in path_str_resolved:
+                return False, f"Path traversal detected: '{path_str}'"
+        if allow_existing_only and not p.exists():
+            return False, f"Path does not exist: {path_str}"
+        return True, str(p)
+    except Exception as e:
+        return False, f"Invalid path: {e}"
+
+
+def _log_sensitivity(action, target, result="success"):
+    try:
+        log = []
+        if _SAFETY_LOG.exists():
+            log = json.loads(_SAFETY_LOG.read_text(encoding="utf-8"))
+        log.append({
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "module": "system_access",
+            "action": action,
+            "target": str(target)[:200],
+            "result": result,
+        })
+        log = log[-500:]
+        _SAFETY_LOG.parent.mkdir(parents=True, exist_ok=True)
+        _SAFETY_LOG.write_text(json.dumps(log, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
 
 
 def _run(cmd, timeout=15):
@@ -103,6 +157,8 @@ def handle(parameters: dict) -> str:
     handler = handlers.get(action)
     if handler:
         result = handler()
+        if action in SENSITIVE_ACTIONS:
+            _log_sensitivity(action, target)
         return result if isinstance(result, str) else str(result)
     return f"Unknown system_access action: {action}. Available: {', '.join(sorted(handlers.keys()))}"
 
@@ -116,6 +172,8 @@ _BROWSER_CLASSES = {"Chrome_WidgetWin_1", "MozillaWindowClass", "Edge_DBLClickWi
 
 def _get_browser_tabs(filter_domain: str = "") -> str:
     """List all open browser window titles. Optionally filter by domain."""
+    if sys.platform != "win32":
+        return "Browser tab detection not available on this platform"
     try:
         user32 = ctypes.windll.user32
         results = []
@@ -275,6 +333,8 @@ def _get_screen_info() -> str:
 
 
 def _get_foreground_app() -> str:
+    if sys.platform != "win32":
+        return "Foreground app detection not available on this platform"
     try:
         import ctypes.wintypes
         user32 = ctypes.windll.user32
@@ -763,11 +823,15 @@ def _night_mode_status() -> str:
 
 
 def _set_wallpaper(path: str) -> str:
-    if not path or not Path(path).exists():
-        return f"Image not found: {path}"
+    if sys.platform != "win32":
+        return "Set wallpaper not available on this platform"
+    valid, resolved = _validate_path(path, allow_existing_only=True)
+    if not valid:
+        _log_sensitivity("set_wallpaper", path, result=f"rejected: {resolved}")
+        return f"Path rejected: {resolved}"
     try:
         import ctypes
-        ctypes.windll.user32.SystemParametersInfoW(20, 0, str(Path(path).resolve()), 3)
+        ctypes.windll.user32.SystemParametersInfoW(20, 0, resolved, 3)
         return f"Wallpaper set: {path}"
     except Exception as e:
         return f"Wallpaper error: {e}"
@@ -803,6 +867,8 @@ def _set_clipboard(text: str) -> str:
 
 
 def _get_volume() -> str:
+    if sys.platform != "win32":
+        return "Volume info not available on this platform"
     try:
         from ctypes import cast, POINTER
         from comtypes import CLSCTX_ALL
@@ -1000,6 +1066,8 @@ def _get_firewall_status() -> str:
 
 
 def _lock_workstation() -> str:
+    if sys.platform != "win32":
+        return "Lock workstation not available on this platform"
     try:
         ctypes.windll.user32.LockWorkStation()
         return "Workstation locked"

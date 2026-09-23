@@ -1,6 +1,23 @@
 """Cybersecurity and ethical hacking educational tools.
 All tools are for defensive security and educational purposes only.
-Wraps standard security tools (nmap, netsh, powershell) for learning."""
+Wraps standard security tools (nmap, netsh, powershell) for learning.
+
+SAFETY NOTE:
+- OFFENSIVE OPERATIONS ARE STRICTLY PROHIBITED:
+  * No port exploitation, vulnerability exploitation, or denial-of-service.
+  * No network attacks, packet injection, or traffic interception.
+  * No credential brute-forcing or password cracking attempts.
+  * No malware creation, distribution, or analysis of live malware.
+  * No unauthorized access attempts to any system or network.
+- ALLOWED OPERATIONS (defensive/educational only):
+  * Port scanning (read-only, non-intrusive).
+  * System audit and vulnerability checking (read-only).
+  * Password strength evaluation (local, no cracking).
+  * File hashing and permission checking (local files only).
+  * Network information gathering (your own network only).
+- All security tool usage is logged to .jarvis/safety_log.json.
+- Scans must target only local network ranges (192.168.x.x, 10.x.x.x, 127.0.0.1).
+"""
 
 import subprocess
 import os
@@ -8,6 +25,52 @@ import json
 import hashlib
 import re
 from pathlib import Path
+from datetime import datetime
+
+_SAFETY_LOG = Path(__file__).resolve().parent.parent / ".jarvis" / "safety_log.json"
+
+ALLOWED_SCAN_TARGETS = ("127.0.0.1", "localhost", "192.168.", "10.", "172.16.", "172.17.",
+                        "172.18.", "172.19.", "172.20.", "172.21.", "172.22.", "172.23.",
+                        "172.24.", "172.25.", "172.26.", "172.27.", "172.28.", "172.29.",
+                        "172.30.", "172.31.")
+
+OFFENSIVE_KEYWORDS = frozenset({
+    "exploit", "attack", "inject", "flood", "dos", "ddos", "brute",
+    "crack", "overflow", "reverse_shell", "payload", "meterpreter",
+    "metasploit", "shellcode", "rootkit", "keylogger", "backdoor",
+})
+
+
+def _validate_target(target):
+    """Validate scan target is within allowed local network ranges."""
+    if not target:
+        return False, "No target specified"
+    target_lower = target.lower().strip()
+    for prefix in ALLOWED_SCAN_TARGETS:
+        if target_lower.startswith(prefix) or target_lower == prefix.rstrip("."):
+            return True, target
+    if target_lower in ("127.0.0.1", "localhost"):
+        return True, target
+    return False, f"Target '{target}' is not in allowed local network ranges. Only local network scans are permitted."
+
+
+def _log_security_event(action, target, result="success"):
+    try:
+        log = []
+        if _SAFETY_LOG.exists():
+            log = json.loads(_SAFETY_LOG.read_text(encoding="utf-8"))
+        log.append({
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "module": "cybersec_tools",
+            "action": action,
+            "target": str(target)[:200],
+            "result": result,
+        })
+        log = log[-500:]
+        _SAFETY_LOG.parent.mkdir(parents=True, exist_ok=True)
+        _SAFETY_LOG.write_text(json.dumps(log, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
 
 
 def _run(cmd, timeout=30):
@@ -29,6 +92,19 @@ def handle(parameters=None):
     action = params.get("action", "help")
     target = params.get("target", "")
     value = params.get("value", "")
+
+    if action in ("port_scan", "open_ports", "traceroute"):
+        valid, msg = _validate_target(target)
+        if not valid:
+            _log_security_event(action, target, result=f"rejected: {msg}")
+            return f"BLOCKED: {msg}"
+
+    if action in ("hash_file", "file_permissions"):
+        if target and not os.path.exists(target):
+            _log_security_event(action, target, result="file_not_found")
+            return f"File not found: {target}"
+
+    _log_security_event(action, target)
 
     handlers = {
         "port_scan": lambda: _port_scan(target),
@@ -68,25 +144,25 @@ def handle(parameters=None):
 
 
 def _help():
-    return """CYBERSECURITY TOOLS (Educational/Defensive):
-  port_scan        - Scan ports on target (e.g. 192.168.1.1)
-  open_ports       - Quick check common ports on target
+    return """CYBERSECURITY TOOLS (Educational/Defensive ONLY):
+  port_scan        - Scan ports on LOCAL target (e.g. 192.168.1.1)
+  open_ports       - Quick check common ports on LOCAL target
   network_info     - Show local network configuration
   wifi_security    - Analyze WiFi security settings
   system_audit     - Full system security audit
-  password_check   - Check password strength
+  password_check   - Check password strength (local, no cracking)
   hash_file        - Generate file hash (MD5/SHA256)
   firewall_status  - Check firewall configuration
   running_services - List running services
   installed_software - List installed programs
   env_secrets_check - Check for exposed secrets in env
-  credential_check - Check for weak/default credentials
+  credential_check - Check for weak/default credentials (advisory only)
   dns_lookup       - DNS resolution check
   whois_lookup     - WHOIS domain information
   mac_lookup       - MAC address vendor lookup
   network_connections - Active network connections
   arp_table        - ARP cache contents
-  traceroute       - Network route to target
+  traceroute       - Network route to LOCAL target
   wifi_passwords   - Show saved WiFi passwords
   user_accounts    - List local user accounts
   file_permissions - Check file/folder permissions
@@ -94,7 +170,14 @@ def _help():
   scheduled_tasks  - List scheduled tasks
   browser_history_check - Check browser history location
   encryption_info  - Show encryption status
-  vulnerability_check - Basic vulnerability scan"""
+  vulnerability_check - Basic vulnerability scan
+
+SAFETY BOUNDARIES:
+  - Only LOCAL network scans permitted (192.168.x.x, 10.x.x.x, 127.0.0.1)
+  - No offensive operations (exploits, attacks, brute-force, DoS)
+  - No malware creation or distribution
+  - All tool usage is logged for audit
+"""
 
 
 def _port_scan(target):

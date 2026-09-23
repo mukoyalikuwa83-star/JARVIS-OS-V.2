@@ -42,7 +42,11 @@ class SideHustleEngine:
         self._revenue = self._load(_REVENUE_PATH, {"total_earned": 0, "total_withdrawn": 0, "balance": 0, "transactions": []})
         self._active = self._load(_ACTIVE_HUSTLES_PATH, {"hustles": [], "products": []})
         self._earnings = self._load(_EARNINGS_PATH, {"daily": []})
+        self._payout_destination = ""
         self._migrate_earnings()
+
+    def _reload(self):
+        self._revenue = self._load(_REVENUE_PATH, {"total_earned": 0, "total_withdrawn": 0, "balance": 0, "transactions": []})
 
     def _migrate_earnings(self):
         entries = self._earnings.pop("entries", None)
@@ -110,20 +114,54 @@ class SideHustleEngine:
             pass
 
     def record_revenue(self, amount, source, description=""):
+        try:
+            amount = float(amount)
+        except (TypeError, ValueError):
+            return {"success": False, "error": "Revenue amount must be a number"}
+        if amount <= 0:
+            return {"success": False, "error": "Revenue amount must be greater than 0"}
         self._revenue["total_earned"] += amount
         self._revenue["balance"] += amount
         self._revenue["transactions"].append({"time": time.time(), "amount": amount, "source": source, "desc": description, "type": "income"})
         self._earnings.setdefault("daily", []).append({"date": time.strftime("%Y-%m-%d"), "amount": amount, "source": source})
         self._save()
+        return {"success": True, "amount": amount, "source": source, "balance": self._revenue["balance"]}
 
     def withdraw(self, amount, method="manual"):
+        """Withdraw real money. Routes through the actual payout rail
+        (actions.namibian_payments.process_withdrawal) instead of silently
+        recording a fake $-0.00 withdrawal. Validates amount before anything
+        is deducted."""
+        try:
+            amount = float(amount)
+        except (TypeError, ValueError):
+            return {"success": False, "error": "Withdrawal amount must be a number"}
+        if amount <= 0:
+            return {"success": False, "error": "Withdrawal amount must be greater than 0"}
         if amount > self._revenue["balance"]:
             return {"success": False, "error": "Insufficient balance", "balance": self._revenue["balance"]}
-        self._revenue["balance"] -= amount
-        self._revenue["total_withdrawn"] += amount
-        self._revenue["transactions"].append({"time": time.time(), "amount": -amount, "source": "withdrawal", "desc": f"Withdrawn via {method}", "type": "withdrawal"})
-        self._save()
-        return {"success": True, "amount": amount, "method": method, "new_balance": self._revenue["balance"]}
+        try:
+            from actions.namibian_payments import process_withdrawal
+            method = (method or "manual").lower()
+            result = process_withdrawal(
+                method, amount, currency="USD",
+                destination=getattr(self, "_payout_destination", ""),
+            )
+        except Exception as e:
+            return {"success": False, "error": f"Withdrawal failed: {e}", "balance": self._revenue["balance"]}
+        if not result.get("success"):
+            return {"success": False, "error": result.get("error", "Withdrawal failed"),
+                    "balance": self._revenue["balance"], "reference": result.get("reference", "")}
+        self._reload()
+        if result.get("status") == "instructions_sent":
+            return {"success": True, "amount": amount, "method": method,
+                    "new_balance": self._revenue["balance"],
+                    "reference": result.get("reference"),
+                    "status": "instructions_sent",
+                    "note": "Bank transfer instructions generated - deposited once transfer completes."}
+        return {"success": True, "amount": amount, "method": method,
+                "new_balance": self._revenue["balance"],
+                "reference": result.get("reference"), "status": result.get("status", "sent")}
 
     def get_earnings_report(self):
         now = time.time()
