@@ -145,10 +145,13 @@ except Exception:
     _preload = lambda *a: None
 
 # Preload critical handlers used at startup
+# screen_automation is intentionally absent: its OCR stack (pytesseract/pandas)
+# and Tesseract path scan cost seconds at import, and the tool is only needed
+# when the user asks for it.
 _preload(
     "mood_detector", "conversation_memory", "tts_engine", "screen_awareness",
     "real_hustle", "autonomous_worker", "money_makers", "gumroad_api",
-    "stripe_payments", "screen_automation", "notification_push",
+    "stripe_payments", "notification_push",
 )
 
 # ─── Core Module Imports (keep essential) ───────────────────────────────
@@ -270,7 +273,7 @@ SELF_QUIT_GOODBYE = (
     "Until next time."
 )
 
-LIVE_VAD_SILENCE_MS = 80
+LIVE_VAD_SILENCE_MS = 120
 _LIVE_RECONNECT_MAX_DELAY = 5.0
 _LIVE_KEEPALIVE_INTERVAL = 15.0
 _MIC_GAIN_DB = 95
@@ -361,6 +364,22 @@ def _is_transient_live_connection_error(exc) -> bool:
         if "timed out" in message or "opening handshake" in message:
             return True
     return False
+
+
+class _LiveConnectionLost(Exception):
+    """Raised by live-session tasks when the websocket can no longer serve.
+
+    run()'s reconnect classifier routes on the message text, so wrappers must
+    preserve the original error string.
+    """
+
+
+def _as_live_lost(exc: BaseException) -> _LiveConnectionLost:
+    """Wrap the original error, tagging clean 1000 closes for the classifier."""
+    text = str(exc)
+    if "1000" in text and not any(code in text for code in ("1006", "1007", "1011", "1012", "1014")):
+        return _LiveConnectionLost(f"connection closed ok: {text}")
+    return _LiveConnectionLost(text)
 
 
 def _live_response_audio_bytes(response) -> bytes:
@@ -706,6 +725,8 @@ class JarvisLive:
         """Wrap a coroutine so a single task crash never kills the TaskGroup."""
         try:
             return await coro
+        except _LiveConnectionLost:
+            raise
         except asyncio.CancelledError:
             return
         except Exception as e:
@@ -846,8 +867,9 @@ class JarvisLive:
         # A voice model can occasionally omit audio/turn_complete. Do not
         # leave the user with a permanently armed shutdown in that case.
         try:
-            if self._self_quit_timer is not None:
-                self._self_quit_timer.cancel()
+            existing_timer = getattr(self, "_self_quit_timer", None)
+            if existing_timer is not None:
+                existing_timer.cancel()
             self._self_quit_timer = threading.Timer(8.0, self._force_complete_self_quit)
             self._self_quit_timer.daemon = True
             self._self_quit_timer.start()
@@ -896,6 +918,12 @@ class JarvisLive:
         if shutdown_requested.is_set():
             return
         shutdown_requested.set()
+        try:
+            awareness = getattr(self, "_awareness_engine", None)
+            if awareness is not None:
+                awareness.stop()
+        except Exception:
+            pass
         try:
             session = getattr(self, "session", None)
             loop = getattr(self, "_loop", None)
@@ -1040,6 +1068,96 @@ class JarvisLive:
             return results
         return list(await asyncio.gather(*(self._execute_tool(call) for call in calls), return_exceptions=True))
 
+    _YOUTUBE_PLAYBACK_HINTS = (
+        "video", "trailer", "youtube", "watch", "episode", "interview",
+        "podcast", "stream", "live",
+    )
+
+    # Semantic domains shared between overlapping tools. When two tools in one
+    # batch would perform the same check, only the richer (cybersec) tool runs.
+    _CYBERSEC_DOMAIN = {
+        "port_scan": "ports", "open_ports": "ports",
+        "firewall_status": "firewall",
+        "network_connections": "connections",
+        "network_info": "network",
+        "user_accounts": "accounts", "password_check": "accounts",
+    }
+    _CYBERSECURITY_DOMAIN = {
+        "scan_ports": "ports",
+        "check_firewall": "firewall",
+        "check_connections": "connections",
+        "scan_network": "network",
+        "check_passwords": "accounts",
+    }
+
+    @classmethod
+    def _resolve_tool_call_clashes(cls, function_calls):
+        """Mark duplicate or overlapping calls so one request never double-fires.
+
+        Returns (call, skip_reason) pairs; skip_reason None means execute the call.
+        """
+        calls = list(function_calls or [])
+        media_play = None
+        youtube_play = None
+        covered_security_domains = set()
+        present_names = set()
+        for fc in calls:
+            name = getattr(fc, "name", "")
+            args = dict(fc.args or {})
+            action = str(args.get("action") or "play").strip().lower()
+            present_names.add(name)
+            if name == "media_control" and action in ("play", "play_query"):
+                media_play = args
+            elif name == "youtube_video" and action == "play":
+                youtube_play = args
+            elif name == "cybersec":
+                domain = cls._CYBERSEC_DOMAIN.get(action)
+                if domain:
+                    covered_security_domains.add(domain)
+
+        prefer_youtube = False
+        if media_play is not None and youtube_play is not None:
+            query = str(youtube_play.get("query") or "").lower()
+            url = str(youtube_play.get("url") or "").lower()
+            prefer_youtube = "youtube.com" in url or any(
+                hint in query for hint in cls._YOUTUBE_PLAYBACK_HINTS
+            )
+
+        plans = []
+        seen_keys = set()
+        for fc in calls:
+            name = getattr(fc, "name", "")
+            args = dict(fc.args or {})
+            action = str(args.get("action") or "play").strip().lower()
+            try:
+                key = f"{name}:{json.dumps(args, sort_keys=True, default=str)}"
+            except Exception:
+                key = f"{name}:{args}"
+            if key in seen_keys:
+                plans.append((fc, "Duplicate call ignored — already handled in this request."))
+                continue
+            seen_keys.add(key)
+            if not prefer_youtube and name == "youtube_video" and action == "play" and media_play is not None:
+                plans.append((fc, "Skipped: media_control is already handling playback for this request."))
+                continue
+            if prefer_youtube and name == "media_control" and action in ("play", "play_query") and youtube_play is not None:
+                plans.append((fc, "Skipped: youtube_video is already handling playback for this request."))
+                continue
+            if name == "cybersecurity":
+                domain = cls._CYBERSECURITY_DOMAIN.get(action)
+                if domain and domain in covered_security_domains:
+                    plans.append((fc, "Skipped: cybersec is already covering this security check for this request."))
+                    continue
+            if name == "automation_engine":
+                if action == "timer" and "alarm_timer" in present_names:
+                    plans.append((fc, "Skipped: alarm_timer is already handling the timer for this request."))
+                    continue
+                if action == "reminder" and "reminder" in present_names:
+                    plans.append((fc, "Skipped: reminder is already handling the reminder for this request."))
+                    continue
+            plans.append((fc, None))
+        return plans
+
     def _build_config(self) -> types.LiveConnectConfig:
         from datetime import datetime
 
@@ -1087,6 +1205,15 @@ class JarvisLive:
                 f"Adapt your behavior naturally based on this mood. Do NOT tell the user their mood unless asked.\n\n"
             )
             parts.append(mood_ctx)
+
+        awareness_engine = getattr(self, "_awareness_engine", None)
+        if awareness_engine is not None:
+            try:
+                aw_state = awareness_engine.get_state()
+                if aw_state.current_app or aw_state.current_project:
+                    parts.append(f"\n{awareness_engine.get_context_for_prompt()}\n")
+            except Exception:
+                pass
 
         voice = self._get_current_voice()
         return types.LiveConnectConfig(
@@ -1382,7 +1509,14 @@ class JarvisLive:
                 if action == "all" or not task_id:
                     result = json.dumps(queue.get_all_statuses(), ensure_ascii=False)
                 elif action == "cancel":
-                    result = f"Task {task_id} cancelled." if queue.cancel(task_id) else f"Task {task_id} could not be cancelled."
+                    if queue.cancel(task_id):
+                        status = queue.get_status(task_id) or {}
+                        if status.get("status") == "cancelling":
+                            result = f"Cancellation requested for task {task_id}; it will stop at its next safe checkpoint."
+                        else:
+                            result = f"Task {task_id} cancelled."
+                    else:
+                        result = f"Task {task_id} could not be cancelled; it may already be finished or cancelling."
                 else:
                     status = queue.get_status(task_id)
                     result = json.dumps(status, ensure_ascii=False) if status else f"Task {task_id} was not found."
@@ -1503,12 +1637,15 @@ class JarvisLive:
                 from actions.screen_automation import handle as screen_auto_handle
                 r = await loop.run_in_executor(None, lambda: phone_handle(params=args))
                 result = r or "Phone action completed."
-                verify_desc = f"{args.get('action', 'phone')} {args.get('contact', '') or args.get('number', '')}"
-                try:
-                    vr = await loop.run_in_executor(None, lambda: screen_auto_handle(parameters={"action": "verify_action", "target": verify_desc}))
-                    result += f"\n[VERIFIED] {vr}"
-                except Exception:
-                    result += "\n[VERIFY SKIPPED]"
+                # Only verify after a real call/text initiation, not on errors or unknown actions
+                phone_action = str(args.get("action", "call") or "call").lower()
+                if phone_action in ("call", "text") and str(r or "").startswith(("CALL_INITIATED|", "TEXT_SENT|")):
+                    verify_desc = f"{args.get('action', 'phone')} {args.get('contact', '') or args.get('number', '')}"
+                    try:
+                        vr = await loop.run_in_executor(None, lambda: screen_auto_handle(parameters={"action": "verify_action", "target": verify_desc}))
+                        result += f"\n[VERIFIED] {vr}"
+                    except Exception:
+                        result += "\n[VERIFY SKIPPED]"
 
             elif name == "coding_assistant":
                 from actions.coding_assistant import handle as coding_handle
@@ -1872,7 +2009,7 @@ class JarvisLive:
                 return
             try:
                 if not self.session:
-                    return
+                    raise _LiveConnectionLost("send: session gone")
                 if self._send_lock is None:
                     self._send_lock = asyncio.Lock()
                 async with self._send_lock:
@@ -1880,16 +2017,19 @@ class JarvisLive:
                         audio=types.Blob(data=msg["data"], mime_type=msg["mime_type"])
                     )
                 self._last_keepalive_activity = time.monotonic()
+            except _LiveConnectionLost:
+                raise
             except Exception as e:
                 msg_str = str(e)
                 if any(code in msg_str for code in ("1000", "1006", "1007", "1011", "1012", "1014")):
                     self.session = None
-                    return
+                    raise _as_live_lost(e) from e
                 if "ConnectionClosed" in type(e).__name__ or "connection is closed" in msg_str.lower():
                     self.session = None
-                    return
+                    raise _as_live_lost(e) from e
                 print(f"[Assistant] ⚠️ Send error: {type(e).__name__}: {str(e)[:120]}", flush=True)
                 self.session = None
+                raise _as_live_lost(e) from e
 
     async def _listen_audio(self):
         import numpy as np
@@ -2042,9 +2182,8 @@ class JarvisLive:
                 while not self._shutdown_requested.is_set():
                     await asyncio.sleep(0.3)
         except Exception as e:
-            print(f"[Assistant] Mic error: {e}")
-            while not self._shutdown_requested.is_set():
-                await asyncio.sleep(1)
+            print(f"[Assistant] Mic error: {e}", flush=True)
+            raise _LiveConnectionLost(f"mic error: {type(e).__name__}: {e}") from e
 
     async def _receive_audio(self):
         print("[Assistant] 👂 Recv started", flush=True)
@@ -2057,8 +2196,7 @@ class JarvisLive:
                 if self._shutdown_requested.is_set():
                     return
                 if not self.session:
-                    await asyncio.sleep(0.5)
-                    continue
+                    raise _LiveConnectionLost("receive: session gone")
                 async for response in self.session.receive():
                     self._last_keepalive_activity = time.monotonic()
 
@@ -2170,12 +2308,20 @@ class JarvisLive:
 
                     if response.tool_call:
                         fn_responses = []
-                        for fc in response.tool_call.function_calls:
+                        for fc, skip_reason in self._resolve_tool_call_clashes(
+                            response.tool_call.function_calls
+                        ):
+                            if skip_reason:
+                                print(f"[Assistant] 🚫 Skipped {fc.name}: {skip_reason}", flush=True)
+                                fn_responses.append(types.FunctionResponse(
+                                    id=fc.id, name=fc.name, response={"result": skip_reason},
+                                ))
+                                continue
                             print(f"[Assistant] 📞 {fc.name}")
                             fr = await self._execute_tool(fc)
                             fn_responses.append(fr)
                         if not self.session:
-                            return
+                            raise _LiveConnectionLost("receive: session gone before tool response")
                         try:
                             await self.session.send_tool_response(
                                 function_responses=fn_responses
@@ -2184,26 +2330,30 @@ class JarvisLive:
                             msg = str(te).lower()
                             if any(k in msg for k in ("1006", "1007", "1011", "1012", "1014",
                                                        "keepalive", "connection closed", "invalid")):
-                                return
+                                raise _as_live_lost(te) from te
                             raise
                     if self._shutdown_requested.is_set():
                         return
+        except _LiveConnectionLost:
+            raise
         except Exception as e:
             if genai is not None and isinstance(e, genai.errors.APIError) and "1000" in str(e):
                 print("[Assistant] 🔌 Session closed normally.", flush=True)
-                return
+                self.session = None
+                raise _as_live_lost(e) from e
             msg = str(e).lower()
             if "content_type_audio" in msg or "response_modalities" in msg:
-                raise
+                self.session = None
+                raise _LiveConnectionLost(str(e)) from e
             if any(k in msg for k in ("1000", "1006", "1007", "1011", "1012", "1014",
                                         "keepalive", "connection closed", "no close frame",
                                         "invalid")):
                 print(f"[Assistant] ⚠️ Receive loop exit: {type(e).__name__}: {str(e)[:120]}", flush=True)
                 self.session = None
-                return
+                raise _as_live_lost(e) from e
             print(f"[Assistant] ❌ Receive loop error: {type(e).__name__}: {str(e)[:200]}", flush=True)
             self.session = None
-            return
+            raise _LiveConnectionLost(f"{type(e).__name__}: {e}") from e
 
 
 
@@ -2226,7 +2376,7 @@ class JarvisLive:
             stream.start()
         except Exception as e:
             print(f"[Assistant] Failed to open playback stream: {e}")
-            return
+            raise _LiveConnectionLost(f"playback stream open failed: {type(e).__name__}: {e}") from e
         _audio_streams.append(stream)
 
         prebuf = []
@@ -2327,7 +2477,7 @@ class JarvisLive:
                         await asyncio.to_thread(stream.write, chunk)
         except Exception as e:
             print(f"[Assistant] ❌ Playback error: {type(e).__name__}: {str(e)[:120]}", flush=True)
-            return
+            raise _LiveConnectionLost(f"playback error: {type(e).__name__}: {e}") from e
         finally:
             self.set_speaking(False)
             stream.stop()
@@ -2338,8 +2488,10 @@ class JarvisLive:
         self._last_keepalive_activity = time.monotonic()
         while True:
             await asyncio.sleep(_LIVE_KEEPALIVE_INTERVAL)
-            if self._shutdown_requested.is_set() or not self.session:
+            if self._shutdown_requested.is_set():
                 return
+            if not self.session:
+                raise _LiveConnectionLost("keepalive: session gone")
             idle_time = time.monotonic() - self._last_keepalive_activity
             if idle_time < _LIVE_KEEPALIVE_INTERVAL * 0.8:
                 consecutive_failures = 0
@@ -2359,7 +2511,7 @@ class JarvisLive:
                 if consecutive_failures > 3:
                     print("[Assistant] ⚠️  Keepalive failed — forcing reconnect")
                     self.session = None
-                    return
+                    raise _LiveConnectionLost(f"keepalive timeout: {type(e).__name__}: {e}") from e
                 await asyncio.sleep(1)
 
     async def _periodic_screen_watch(self):
@@ -2807,6 +2959,8 @@ class JarvisLive:
 
         start_time = time.time()
         while True:
+            if self._shutdown_requested.is_set():
+                return
             try:
                 self.ui.set_state("THINKING")
                 config = self._build_config()
@@ -2852,8 +3006,16 @@ class JarvisLive:
 
             except Exception as e:
                 actual = e
-                if isinstance(e, ExceptionGroup) and len(e.exceptions) == 1:
-                    actual = e.exceptions[0]
+                if isinstance(e, ExceptionGroup):
+                    live_lost = next(
+                        (item for item in _unwrap_exception_groups(e)
+                         if isinstance(item, _LiveConnectionLost)),
+                        None,
+                    )
+                    if live_lost is not None:
+                        actual = live_lost
+                    elif len(e.exceptions) == 1:
+                        actual = e.exceptions[0]
 
                 error_msg = str(actual)
                 diagnosis = report_error(error_msg, model=live_model_id)
@@ -3044,7 +3206,21 @@ def main():
             print(f"[Assistant] ⚠️ API server port error: {e}", flush=True)
         except Exception as e:
             print(f"[Assistant] ⚠️ API server failed: {type(e).__name__}: {e}", flush=True)
+
+    def _start_dashboard_server():
+        try:
+            import uvicorn
+            from api.dashboard import app as dashboard_app, DASHBOARD_HOST, DASHBOARD_PORT
+            uvicorn.run(dashboard_app, host=DASHBOARD_HOST, port=DASHBOARD_PORT, log_level="error")
+        except ImportError:
+            print("[Assistant] ⚠️ Dashboard skipped: FastAPI or uvicorn is not installed", flush=True)
+        except OSError as e:
+            print(f"[Assistant] ⚠️ Dashboard port error: {e}", flush=True)
+        except Exception as e:
+            print(f"[Assistant] ⚠️ Dashboard failed: {type(e).__name__}: {e}", flush=True)
+
     threading.Thread(target=_start_api_server, daemon=True).start()
+    threading.Thread(target=_start_dashboard_server, daemon=True).start()
 
     threading.Thread(target=runner, daemon=True).start()
     print("[Assistant] ✅ Interface ready.", flush=True)

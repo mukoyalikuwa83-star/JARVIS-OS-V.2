@@ -2,14 +2,12 @@ import json
 import re
 import sys
 import threading
-import subprocess
-import tempfile
 import os
 from pathlib import Path
 from typing import Callable
 
-from agent.planner       import create_plan, replan
-from agent.error_handler import analyze_error, generate_fix, ErrorDecision
+from agent.planner       import AGENT_EXECUTOR_TOOLS, create_plan, replan
+from agent.error_handler import analyze_error, ErrorDecision
 
 
 def get_base_dir() -> Path:
@@ -20,6 +18,10 @@ def get_base_dir() -> Path:
 
 BASE_DIR        = get_base_dir()
 API_CONFIG_PATH = BASE_DIR / "config" / "api_keys.json"
+
+
+class UnsupportedToolError(ValueError):
+    """Raised when a plan asks the background executor to use an unknown tool."""
 
 
 def _get_api_key() -> str:
@@ -36,88 +38,7 @@ def _get_api_key() -> str:
     except Exception:
         pass
 
-    raise ValueError("Gemini API key not found. Set GEMINI_API_KEY or config/api_keys.json['gemini_api_key'].")
-
-def _run_generated_code(description: str, speak: Callable | None = None) -> str:
-    import core.gemini_compat as genai
-
-    if speak:
-        speak("Writing custom code for this task.")
-
-    home      = Path.home()
-    desktop   = home / "Desktop"
-    downloads = home / "Downloads"
-    documents = home / "Documents"
-
-    if not desktop.exists() and sys.platform == "win32":
-        try:
-            import winreg
-            key     = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders")
-            desktop = Path(winreg.QueryValueEx(key, "Desktop")[0])
-        except Exception:
-            pass
-
-    genai.configure(api_key=_get_api_key())
-    model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash",
-        system_instruction=(
-            "You are an expert Python developer. "
-            "Write clean, complete, working Python code. "
-            "Use standard library + common packages. "
-            "Install missing packages with subprocess + pip if needed. "
-            "Return ONLY the Python code. No explanation, no markdown, no backticks.\n\n"
-            f"SYSTEM PATHS:\n"
-            f"  Desktop   = r'{desktop}'\n"
-            f"  Downloads = r'{downloads}'\n"
-            f"  Documents = r'{documents}'\n"
-            f"  Home      = r'{home}'\n"
-        )
-    )
-
-    try:
-        response = model.generate_content(
-            f"Write Python code to accomplish this task:\n\n{description}"
-        )
-        code = response.text.strip()
-        code = re.sub(r"```(?:python)?", "", code).strip().rstrip("`").strip()
-
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False, encoding="utf-8"
-        ) as f:
-            f.write(code)
-            tmp_path = f.name
-
-        print(f"[Executor] 🐍 Running generated code: {tmp_path}")
-
-        result = subprocess.run(
-            [sys.executable, tmp_path],
-            capture_output=True, text=True,
-            timeout=120, cwd=str(Path.home())
-        )
-
-        try:
-            os.unlink(tmp_path)
-        except Exception:
-            pass
-
-        output = result.stdout.strip()
-        error  = result.stderr.strip()
-
-        if result.returncode == 0 and output:
-            return output
-        elif result.returncode == 0:
-            return "Task completed successfully."
-        elif error:
-            raise RuntimeError(f"Code error: {error[:400]}")
-        return "Completed."
-
-    except subprocess.TimeoutExpired:
-        raise RuntimeError("Generated code timed out after 120 seconds.")
-    except RuntimeError:
-        raise
-    except Exception as e:
-        raise RuntimeError(f"Generated code failed: {e}")
+    return ""
 
 def _inject_context(params: dict, tool: str, step_results: dict, goal: str = "") -> dict:
     if not step_results:
@@ -245,6 +166,12 @@ def _translate_to_goal_language(content: str, goal: str) -> str:
 
 def _call_tool(tool: str, parameters: dict, speak: Callable | None) -> str:
 
+    if tool not in AGENT_EXECUTOR_TOOLS:
+        raise UnsupportedToolError(
+            f"Unsupported background-agent tool: {tool or '<missing>'}. "
+            "The requested action was not executed."
+        )
+
     if tool == "open_app":
         from actions.open_app import open_app
         return open_app(parameters=parameters, player=None) or "Done."
@@ -315,12 +242,6 @@ def _call_tool(tool: str, parameters: dict, speak: Callable | None) -> str:
         from actions.computer_control import computer_control
         return computer_control(parameters=parameters, player=None) or "Done."
 
-    elif tool == "generated_code":
-        description = parameters.get("description", "")
-        if not description:
-            raise ValueError("generated_code requires a 'description' parameter.")
-        return _run_generated_code(description, speak=speak)
-
     elif tool == "flight_finder":
         from actions.flight_finder import flight_finder
         return flight_finder(parameters=parameters, player=None, speak=speak) or "Done."
@@ -329,9 +250,7 @@ def _call_tool(tool: str, parameters: dict, speak: Callable | None) -> str:
         from actions.presentation_maker import create_presentation
         return create_presentation(parameters=parameters, player=None) or "Done."
 
-    else:
-        print(f"[Executor] ⚠️ Unknown tool '{tool}' — falling back to generated_code")
-        return _run_generated_code(f"Accomplish this task: {parameters}", speak=speak)
+    raise UnsupportedToolError(f"Background-agent tool has no handler: {tool}")
 
 def _goal_requests_file_save(goal: str) -> bool:
     g = str(goal or "").lower()
@@ -440,6 +359,9 @@ class AgentExecutor:
         print(f"\n[Executor] 🎯 Goal: {goal}")
         self._awareness_goal(goal)
 
+        if cancel_flag and cancel_flag.is_set():
+            return "Task cancelled."
+
         replan_attempts = 0
         completed_steps = []
         step_results    = {}
@@ -450,7 +372,7 @@ class AgentExecutor:
             steps = plan.get("steps", [])
 
             if not steps:
-                msg = "I couldn't create a valid plan for this task."
+                msg = plan.get("error") or "I couldn't create a valid plan for this task."
                 if speak: speak(msg)
                 return msg
 
@@ -464,7 +386,7 @@ class AgentExecutor:
                     return "Task cancelled."
 
                 step_num = step.get("step", "?")
-                tool     = step.get("tool", "generated_code")
+                tool     = step.get("tool", "")
                 desc     = step.get("description", "")
                 params   = step.get("parameters", {})
 
@@ -493,6 +415,15 @@ class AgentExecutor:
                         error_msg = str(e)
                         print(f"[Executor] ❌ Step {step_num} attempt {attempt} failed: {error_msg}")
 
+                        if cancel_flag and cancel_flag.is_set():
+                            return "Task cancelled."
+
+                        if isinstance(e, UnsupportedToolError):
+                            failed_step = step
+                            failed_error = error_msg
+                            success = False
+                            break
+
                         recovery = analyze_error(step, error_msg, attempt=attempt)
                         decision = recovery["decision"]
                         user_msg = recovery.get("user_message", "")
@@ -502,7 +433,11 @@ class AgentExecutor:
 
                         if decision == ErrorDecision.RETRY:
                             attempt += 1
-                            import time; time.sleep(2)
+                            if cancel_flag and cancel_flag.wait(2):
+                                return "Task cancelled."
+                            if not cancel_flag:
+                                import time
+                                time.sleep(2)
                             continue
 
                         elif decision == ErrorDecision.SKIP:
@@ -517,24 +452,6 @@ class AgentExecutor:
                             return msg
 
                         else: 
-                            fix_suggestion = recovery.get("fix_suggestion", "")
-                            if fix_suggestion and tool != "generated_code":
-                                try:
-                                    fixed_step = generate_fix(step, error_msg, fix_suggestion)
-                                    if speak: speak("Trying an alternative approach.")
-                                    res = _call_tool(
-                                        fixed_step["tool"],
-                                        fixed_step["parameters"],
-                                        speak
-                                    )
-                                    step_results[step_num] = res
-                                    self.last_step_results = step_results
-                                    completed_steps.append(step)
-                                    step_ok = True
-                                    break
-                                except Exception as fix_err:
-                                    print(f"[Executor] ⚠️ Fix failed: {fix_err}")
-
                             failed_step  = step
                             failed_error = error_msg
                             success      = False
@@ -550,6 +467,8 @@ class AgentExecutor:
 
             if success:
                 self._awareness_idle()
+                if cancel_flag and cancel_flag.is_set():
+                    return "Task cancelled."
                 return self._summarize(goal, completed_steps, speak, step_results)
 
             if replan_attempts >= self.MAX_REPLAN_ATTEMPTS:

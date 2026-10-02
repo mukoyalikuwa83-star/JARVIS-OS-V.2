@@ -696,3 +696,6 @@ def file_controller(
 
     except Exception as e:
         return f"File controller error ({action}): {e}"
+
+
+handle_file_controller = file_controller

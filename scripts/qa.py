@@ -57,15 +57,19 @@ def _run_check(name: str, command: list[str], env: dict[str, str]) -> CheckResul
             env=env,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=300,
             check=False,
         )
-        output = "\n".join(part.strip() for part in (result.stdout, result.stderr) if part.strip())
+        output = "\n".join(
+            part.strip() for part in (result.stdout or "", result.stderr or "") if part.strip()
+        )
         return CheckResult(
             name=name,
             status="passed" if result.returncode == 0 else "failed",
             duration_seconds=time.monotonic() - started,
-            details=redact(output[-4000:]),
+            details=redact(output[-12000:]),
         )
     except subprocess.TimeoutExpired:
         return CheckResult(name, "failed", time.monotonic() - started, "Timed out after 300 seconds.")
@@ -76,7 +80,8 @@ def _run_check(name: str, command: list[str], env: dict[str, str]) -> CheckResul
 def _secret_scan() -> CheckResult:
     started = time.monotonic()
     result = subprocess.run(
-        ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=False
+        ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True,
+        encoding="utf-8", errors="replace", check=False
     )
     candidates = [ROOT / line for line in result.stdout.splitlines() if line.strip()]
     key_pattern = re.compile(r"AIza[0-9A-Za-z_-]{35}")
@@ -110,10 +115,15 @@ def automated(_args) -> int:
         "PYTHONUNBUFFERED": "1",
     })
     report.checks.extend([
-        _run_check("source compilation", [sys.executable, "-m", "compileall", "-q", "actions", "agent", "api", "awareness", "config", "core", "memory", "main.py", "ui.py"], env),
+        _run_check("source compilation", [sys.executable, "-m", "compileall", "-q", "actions", "agent", "api", "awareness", "config", "core", "memory", "main.py"], env),
         _run_check("dependency consistency", [sys.executable, "-m", "pip", "check"], env),
+        _run_check("assistant AI path (offline)", [sys.executable, "scripts/ai_smoke.py", "--no-live"], env),
         _run_check("complete unittest suite", [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"], env),
-        _run_check("offscreen UI evidence", [sys.executable, "scripts/qa_ui_probe.py", str(directory / "ui")], env),
+        _run_check(
+            "offscreen UI regression suite",
+            [sys.executable, "-m", "unittest", "tests.test_graphics_quality", "tests.test_research_progress_ui", "tests.test_ui_submit", "tests.test_vision_preview", "-v"],
+            env,
+        ),
         _secret_scan(),
     ])
     report.findings.extend(repository_findings(ROOT))
@@ -327,6 +337,24 @@ def report_command(_args) -> int:
     return 0
 
 
+def ai_path(args) -> int:
+    """Verify the assistant's live AI path: model session, tools, dispatch.
+
+    Runs outside QA mode on purpose: the QA guard blocks tool calls, and this
+    check exists to exercise the real handler path.
+    """
+    command = [sys.executable, str(ROOT / "scripts" / "ai_smoke.py")]
+    if args.no_live:
+        command.append("--no-live")
+    if args.timeout:
+        command += ["--timeout", str(args.timeout)]
+    if args.verbose:
+        command.append("--verbose")
+    if args.model:
+        command += ["--model", args.model]
+    return subprocess.call(command, cwd=ROOT, env=os.environ.copy())
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run staged, side-effect-safe JARVIS QA.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -347,6 +375,15 @@ def main() -> int:
         help="Duration of the short automatic stability probe (default: 5).",
     )
     checklist_parser.set_defaults(func=checklist_auto)
+    ai_parser = subparsers.add_parser(
+        "ai",
+        help="Verify the assistant's live AI path (Gemini Live session and tool dispatch).",
+    )
+    ai_parser.add_argument("--no-live", action="store_true", help="Skip the real Gemini Live session.")
+    ai_parser.add_argument("--timeout", type=float, default=90.0, help="Live session timeout in seconds.")
+    ai_parser.add_argument("--verbose", action="store_true", help="Print per-message live session events.")
+    ai_parser.add_argument("--model", default=None, help="Override the live model id.")
+    ai_parser.set_defaults(func=ai_path)
     report_parser = subparsers.add_parser("report", help="Regenerate the latest Markdown report.")
     report_parser.set_defaults(func=report_command)
     args = parser.parse_args()

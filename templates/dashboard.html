@@ -7,16 +7,36 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.6; }
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #30363d; margin-bottom: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        header { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 0; border-bottom: 1px solid #30363d; margin-bottom: 20px; }
+        .header-subtitle { color: #8b949e; font-size: .9rem; margin-top: 3px; }
+        .header-status { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+        .connection-badge { color: #8b949e; border: 1px solid #30363d; border-radius: 999px; padding: 6px 10px; font: 600 .72rem 'Segoe UI', sans-serif; letter-spacing: .04em; }
+        .connection-badge.online { color: #3fb950; border-color: #238636; }
+        .connection-badge.polling { color: #d29922; border-color: #9e6a03; }
+        .last-update { color: #8b949e; font-size: .75rem; min-width: 120px; text-align: right; }
         h1 { font-size: 1.8rem; color: #58a6ff; }
         .status-badge { padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; }
         .status-safe { background: #238636; color: #fff; }
         .status-warning { background: #d29922; color: #0d1117; }
         .status-danger { background: #da3633; color: #fff; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-bottom: 20px; }
-        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; }
+        .status-unknown { background: #30363d; color: #e6edf3; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr)); gap: 20px; margin-bottom: 20px; }
+        .card { background: linear-gradient(145deg, #161b22, #111923); border: 1px solid #30363d; border-radius: 10px; padding: 20px; box-shadow: 0 10px 28px #01040933; }
         .card h2 { color: #58a6ff; margin-bottom: 15px; font-size: 1.1rem; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+        .overview-card { grid-column: 1 / -1; border-color: #1f6feb66; background: radial-gradient(ellipse at top right, #0d419044, transparent 48%), linear-gradient(145deg, #161b22, #111923); }
+        .overview-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        .metric { min-width: 0; border: 1px solid #30363d; border-radius: 8px; padding: 14px; background: #0d111799; }
+        .metric-label { color: #8b949e; font-size: .78rem; text-transform: uppercase; letter-spacing: .07em; }
+        .metric-value { margin-top: 5px; color: #e6edf3; font-size: 1.35rem; font-weight: 700; overflow-wrap: anywhere; }
+        .metric-value.blue { color: #58a6ff; }
+        .integration-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+        .integration-chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #30363d; border-radius: 999px; padding: 7px 11px; color: #c9d1d9; font-size: .82rem; }
+        .integration-dot { width: 8px; height: 8px; border-radius: 50%; background: #d29922; box-shadow: 0 0 10px currentColor; }
+        .integration-dot.ready { background: #3fb950; }
+        .card-heading-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .card-heading-row h2 { flex: 1; }
+        .integrity-status { color: #8b949e; font-size: .82rem; }
         .kill-panel { grid-column: 1 / -1; }
         .kill-item { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         .kill-item.danger { border-left: 4px solid #da3633; }
@@ -33,6 +53,7 @@
         .btn-primary:hover { background: #2ea043; }
         .btn-secondary { background: #21262d; color: #e6edf3; border: 1px solid #30363d; }
         .btn-secondary:hover { background: #30363d; }
+        .btn:focus-visible, .tab:focus-visible, input:focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }
         .circuit-breaker { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #161b22; border: 1px solid #30363d; border-radius: 6px; margin-bottom: 8px; }
         .cb-name { font-weight: 500; }
         .cb-limit { color: #8b949e; font-size: 0.85rem; }
@@ -63,17 +84,47 @@
         .empty { text-align: center; color: #8b949e; padding: 40px; }
         @media (max-width: 768px) {
             .grid { grid-template-columns: 1fr; }
+            .overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 560px) {
+            .container { padding: 14px; }
+            header { align-items: flex-start; flex-direction: column; }
+            .header-status { justify-content: flex-start; }
+            .last-update { text-align: left; }
+            .kill-item, .circuit-breaker { align-items: flex-start; gap: 12px; flex-direction: column; }
+            .overview-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .metric { padding: 10px; }
+            .metric-value { font-size: 1.05rem; }
+            .card-heading-row { align-items: flex-start; flex-direction: column; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🛡️ JARVIS Dashboard</h1>
-            <span id="system-status" class="status-badge status-safe">SYSTEM SAFE</span>
+            <div>
+                <h1>🛡️ JARVIS Dashboard</h1>
+                <p class="header-subtitle">Live safety, system activity, and audit controls</p>
+            </div>
+            <div class="header-status">
+                <span id="dashboard-connection" class="connection-badge">CONNECTING</span>
+                <span id="system-status" class="status-badge status-unknown">STATUS UNKNOWN</span>
+                <span id="last-update" class="last-update">Waiting for JARVIS…</span>
+            </div>
         </header>
 
         <div class="grid">
+            <div class="card overview-card">
+                <h2>🧭 Operations Overview</h2>
+                <div class="overview-grid" id="overview-metrics">
+                    <div class="metric"><div class="metric-label">JARVIS Runtime</div><div class="metric-value">Loading…</div></div>
+                    <div class="metric"><div class="metric-label">Monitored Domains</div><div class="metric-value">Loading…</div></div>
+                    <div class="metric"><div class="metric-label">Safety Alerts</div><div class="metric-value">Loading…</div></div>
+                    <div class="metric"><div class="metric-label">Runtime</div><div class="metric-value">Loading…</div></div>
+                </div>
+                <div class="integration-list" id="integration-readiness" aria-live="polite"></div>
+            </div>
+
             <div class="card kill-panel">
                 <h2>🛑 Kill Switch Status</h2>
                 <div id="kill-panel">
@@ -111,7 +162,13 @@
         </div>
 
         <div class="card">
-            <h2>📜 Audit Log</h2>
+            <div class="card-heading-row">
+                <h2>📜 Audit Log</h2>
+                <div>
+                    <button class="btn btn-secondary" id="verify-audit" type="button">Verify Integrity</button>
+                    <span class="integrity-status" id="audit-integrity" role="status">Not checked</span>
+                </div>
+            </div>
             <div class="tabs">
                 <div class="tab active" data-tab="recent">Recent</div>
                 <div class="tab" data-tab="search">Search</div>
@@ -144,20 +201,53 @@
     <script>
         let ws = null;
         let reconnectAttempts = 0;
+        let websocketConnected = false;
+        let apiReachable = false;
         const maxReconnectAttempts = 5;
 
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[char]);
+        }
+
+        function setConnectionState(state) {
+            const badge = document.getElementById('dashboard-connection');
+            const labels = { connecting: 'CONNECTING', live: 'LIVE', polling: 'POLLING', offline: 'OFFLINE' };
+            badge.textContent = labels[state] || 'UNKNOWN';
+            badge.className = `connection-badge${state === 'live' ? ' online' : state === 'polling' ? ' polling' : ''}`;
+        }
+
+        function showStatusUnavailable() {
+            const badge = document.getElementById('system-status');
+            badge.textContent = 'STATUS UNKNOWN';
+            badge.className = 'status-badge status-unknown';
+            document.getElementById('last-update').textContent = 'Could not reach JARVIS';
+        }
+
         function connectWebSocket() {
-            ws = new WebSocket(`ws://${window.location.host}/ws`);
-            ws.onopen = () => { console.log('WebSocket connected'); reconnectAttempts = 0; };
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+            ws.onopen = () => { websocketConnected = true; setConnectionState('live'); reconnectAttempts = 0; };
             ws.onmessage = (event) => {
-                const msg = JSON.parse(event.data);
-                if (msg.type === 'status') updateStatus(msg.data);
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (msg.type === 'status') updateStatus(msg.data);
+                } catch (error) {
+                    console.error('Invalid dashboard update', error);
+                }
             };
             ws.onclose = () => {
+                websocketConnected = false;
+                setConnectionState(apiReachable ? 'polling' : 'offline');
                 if (reconnectAttempts < 5) {
                     reconnectAttempts++;
                     setTimeout(connectWebSocket, 1000 * reconnectAttempts);
                 }
+            };
+            ws.onerror = () => {
+                websocketConnected = false;
+                setConnectionState(apiReachable ? 'polling' : 'offline');
             };
         }
 
@@ -183,6 +273,7 @@
             renderKillPanel(data.active_kills || []);
             renderCircuitBreakers(data.circuit_breakers || {});
             renderHeartbeats(data.heartbeats || {});
+            document.getElementById('last-update').textContent = `Updated ${new Date().toLocaleTimeString()}`;
         }
 
         function renderKillPanel(kills) {
@@ -194,10 +285,10 @@
             container.innerHTML = kills.map((k, i) => `
                 <div class="kill-item danger">
                     <div class="kill-info">
-                        <div class="kill-layer">Layer ${k.layer}: ${k.reason}</div>
-                        <div class="kill-reason">Domain: <span class="kill-domain">${k.domain}</span></div>
-                        <div class="kill-time">${new Date(k.timestamp).toLocaleString()}</div>
-                        <div class="kill-reason">Details: ${JSON.stringify(k.details || {})}</div>
+                        <div class="kill-layer">Layer ${escapeHtml(k.layer)}: ${escapeHtml(k.reason)}</div>
+                        <div class="kill-reason">Domain: <span class="kill-domain">${escapeHtml(k.domain)}</span></div>
+                        <div class="kill-time">${escapeHtml(new Date(k.timestamp).toLocaleString())}</div>
+                        <div class="kill-reason">Details: ${escapeHtml(JSON.stringify(k.details || {}))}</div>
                     </div>
                     <button class="btn btn-primary" onclick="acknowledgeKill(${i})" ${k.acknowledged ? 'disabled' : ''}>
                         ${k.acknowledged ? 'Acknowledged' : 'Acknowledge'}
@@ -220,19 +311,22 @@
                 return `
                     <div class="circuit-breaker">
                         <div>
-                            <div class="cb-name">${name}</div>
-                            <div class="cb-limit">Domain: ${cb.domain} | Limit: ${cb.limit} | Current: ${cb.current}</div>
+                            <div class="cb-name">${escapeHtml(name)}</div>
+                            <div class="cb-limit">Domain: ${escapeHtml(cb.domain)} | Limit: ${escapeHtml(cb.limit)} | Current: ${escapeHtml(cb.current)}</div>
                             <div class="progress-bar">
                                 <div class="progress-fill ${pct > 80 ? 'warning' : (pct >= 100 ? 'danger' : '')}" style="width: ${pct}%"></div>
                             </div>
                         </div>
                         <div>
                             <span class="cb-status ${statusClass.toLowerCase()}">${statusText}</span>
-                            ${cb.triggered ? `<button class="btn btn-secondary" style="margin-left: 10px; padding: 4px 10px; font-size: 0.75rem;" onclick="resetBreaker('${name}')">Reset</button>` : ''}
+                            ${cb.triggered ? `<button class="btn btn-secondary" style="margin-left: 10px; padding: 4px 10px; font-size: 0.75rem;" data-reset-breaker="${escapeHtml(name)}">Reset</button>` : ''}
                         </div>
                     </div>
                 `;
             }).join('');
+            container.querySelectorAll('[data-reset-breaker]').forEach((button) => {
+                button.addEventListener('click', () => resetBreaker(button.dataset.resetBreaker));
+            });
         }
 
         function renderHeartbeats(heartbeats) {
@@ -244,8 +338,8 @@
             }
             container.innerHTML = entries.map(([domain, hb]) => `
                 <div class="stat-row">
-                    <span class="stat-label">${domain}</span>
-                    <span class="stat-value">${hb.missed > 0 ? '⚠️ ' + hb.missed + ' missed' : '✅ OK'}</span>
+                    <span class="stat-label">${escapeHtml(domain)}</span>
+                    <span class="stat-value">${Number(hb.missed) > 0 ? `⚠️ ${escapeHtml(hb.missed)} missed` : '✅ OK'}</span>
                 </div>
             `).join('');
         }
@@ -259,7 +353,7 @@
                 } else {
                     container.innerHTML = res.keys.map(k => `
                         <div class="stat-row">
-                            <span class="stat-label">${k}</span>
+                            <span class="stat-label">${escapeHtml(k)}</span>
                             <span class="stat-value">●●●●●●●●</span>
                         </div>
                     `).join('');
@@ -269,13 +363,63 @@
             }
         }
 
+        function formatDuration(totalSeconds) {
+            const seconds = Math.max(0, Number(totalSeconds) || 0);
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            if (days) return `${days}d ${hours}h`;
+            if (hours) return `${hours}h ${minutes}m`;
+            return `${minutes}m ${Math.floor(seconds % 60)}s`;
+        }
+
+        async function loadOverview() {
+            const metrics = document.getElementById('overview-metrics');
+            const integrations = document.getElementById('integration-readiness');
+            try {
+                const data = await api('/overview');
+                const warnings = Number(data.active_kills) + Number(data.triggered_breakers) + Number(data.missed_heartbeats);
+                metrics.innerHTML = `
+                    <div class="metric"><div class="metric-label">Dashboard Uptime</div><div class="metric-value blue">${escapeHtml(formatDuration(data.runtime_seconds))}</div></div>
+                    <div class="metric"><div class="metric-label">Monitored Domains</div><div class="metric-value">${escapeHtml(data.heartbeats)}</div><div class="cb-limit">${escapeHtml(data.missed_heartbeats)} with missed beats</div></div>
+                    <div class="metric"><div class="metric-label">Safety Alerts</div><div class="metric-value">${escapeHtml(warnings)}</div><div class="cb-limit">${escapeHtml(data.triggered_breakers)} breakers · ${escapeHtml(data.active_kills)} stops</div></div>
+                    <div class="metric"><div class="metric-label">Runtime</div><div class="metric-value">Python ${escapeHtml(data.python_version)}</div><div class="cb-limit">Process ${escapeHtml(data.process_id)}</div></div>
+                `;
+                integrations.innerHTML = data.integrations.map(item => `
+                    <span class="integration-chip"><span class="integration-dot ${item.configured ? 'ready' : ''}"></span>${escapeHtml(item.name)} · ${item.configured ? 'Configured' : 'Setup needed'}</span>
+                `).join('');
+            } catch (error) {
+                metrics.textContent = 'Runtime overview unavailable';
+                integrations.textContent = 'Could not load integration readiness.';
+            }
+        }
+
+        async function verifyAuditIntegrity() {
+            const output = document.getElementById('audit-integrity');
+            const button = document.getElementById('verify-audit');
+            output.textContent = 'Verifying…';
+            button.disabled = true;
+            try {
+                const result = await api('/audit/verify');
+                output.textContent = result.valid
+                    ? 'Integrity verified'
+                    : `Issues found: ${Number(result.errors?.length || 0)}`;
+                output.style.color = result.valid ? '#3fb950' : '#f85149';
+            } catch (error) {
+                output.textContent = 'Verification unavailable';
+                output.style.color = '#d29922';
+            } finally {
+                button.disabled = false;
+            }
+        }
+
         async function loadAuditStats() {
             try {
                 const stats = await api('/audit/stats');
                 const container = document.getElementById('audit-stats');
                 container.innerHTML = `
                     <div class="stat-row"><span class="stat-label">Total Entries</span><span class="stat-value">${stats.total_entries}</span></div>
-                    <div class="stat-row"><span class="stat-label">By Domain</span><span class="stat-value">${Object.keys(stats.by_domain).length}</span></div>
+                    <div class="stat-row"><span class="stat-label">By Domain</span><span class="stat-value">${Object.keys(stats.by_domain || {}).length}</span></div>
                 `;
                 // Also load recent
                 loadRecentAudit();
@@ -287,7 +431,7 @@
 
         async function loadRecentAudit() {
             try {
-                const entries = await api('/audit/recent?limit=20');
+                const entries = await api('/audit/recent?count=20');
                 const container = document.getElementById('audit-recent');
                 if (entries.length === 0) {
                     container.innerHTML = '<div class="empty">No audit entries yet</div>';
@@ -296,9 +440,9 @@
                 container.innerHTML = entries.map(e => `
                     <div class="audit-entry">
                         <div class="audit-time">${new Date(e.timestamp_utc).toLocaleString()}</div>
-                        <div><span class="audit-domain">${e.domain}</span> - <span class="audit-action">${e.action_proposed}</span></div>
-                        <div class="audit-time">Screen: ${e.screening_result} | Gate: ${e.gate_result} | Exec: <span class="audit-result ${e.execution_result.includes('success') ? 'success' : e.execution_result.includes('failed') ? 'failed' : 'pending'}">${e.execution_result}</span></div>
-                        <div class="audit-time">${e.reasoning_summary}</div>
+                        <div><span class="audit-domain">${escapeHtml(e.domain)}</span> - <span class="audit-action">${escapeHtml(e.action_proposed)}</span></div>
+                        <div class="audit-time">Screen: ${escapeHtml(e.screening_result)} | Gate: ${escapeHtml(e.gate_result)} | Exec: <span class="audit-result ${String(e.execution_result || '').toLowerCase().includes('success') ? 'success' : String(e.execution_result || '').toLowerCase().includes('failed') ? 'failed' : 'pending'}">${escapeHtml(e.execution_result)}</span></div>
+                        <div class="audit-time">${escapeHtml(e.reasoning_summary)}</div>
                     </div>
                 `).join('');
             } catch (e) {
@@ -310,8 +454,8 @@
             const container = document.getElementById('audit-stats-detail');
             container.innerHTML = `
                 <div class="stat-row"><span class="stat-label">Total Entries</span><span class="stat-value">${stats.total_entries}</span></div>
-                <div class="stat-row"><span class="stat-label">By Domain</span><span class="stat-value">${JSON.stringify(stats.by_domain, null, 2)}</span></div>
-                <div class="stat-row"><span class="stat-label">By Result</span><span class="stat-value">${JSON.stringify(stats.by_result, null, 2)}</span></div>
+                <div class="stat-row"><span class="stat-label">By Domain</span><span class="stat-value">${escapeHtml(JSON.stringify(stats.by_domain || {}, null, 2))}</span></div>
+                <div class="stat-row"><span class="stat-label">By Result</span><span class="stat-value">${escapeHtml(JSON.stringify(stats.by_result || {}, null, 2))}</span></div>
             `;
         }
 
@@ -328,8 +472,8 @@
                 container.innerHTML = results.map(e => `
                     <div class="audit-entry">
                         <div class="audit-time">${new Date(e.timestamp_utc).toLocaleString()}</div>
-                        <div><span class="audit-domain">${e.domain}</span> - <span class="audit-action">${e.action_proposed}</span></div>
-                        <div class="audit-time">${e.reasoning_summary}</div>
+                        <div><span class="audit-domain">${escapeHtml(e.domain)}</span> - <span class="audit-action">${escapeHtml(e.action_proposed)}</span></div>
+                        <div class="audit-time">${escapeHtml(e.reasoning_summary)}</div>
                     </div>
                 `).join('');
             } catch (e) {
@@ -338,12 +482,14 @@
         }
 
         function triggerKill(layer, reason, domain, details) {
+            if (!confirm(`Activate ${layer} for ${domain}? This immediately stops JARVIS actions covered by that safety layer.`)) return;
             api('/kill', { method: 'POST', body: { layer, reason, domain, details } })
                 .then(() => { refreshAll(); })
                 .catch(e => alert('Error: ' + e.message));
         }
 
         function acknowledgeKill(index) {
+            if (!confirm('Acknowledge this safety stop? Only continue after reviewing its cause and confirming the system is safe.')) return;
             api('/kill/acknowledge', { method: 'POST', body: { kill_index: index } })
                 .then(() => { refreshAll(); })
                 .catch(e => alert('Error: ' + e.message));
@@ -359,11 +505,17 @@
         async function refreshAll() {
             try {
                 const status = await api('/status');
+                apiReachable = true;
                 updateStatus(status);
+                setConnectionState(websocketConnected ? 'live' : 'polling');
+                loadOverview();
                 loadCredentials();
                 loadAuditStats();
             } catch (e) {
+                apiReachable = false;
                 console.error(e);
+                setConnectionState('offline');
+                showStatusUnavailable();
             }
         }
 
@@ -381,6 +533,7 @@
         document.getElementById('search-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') searchAudit();
         });
+        document.getElementById('verify-audit').addEventListener('click', verifyAuditIntegrity);
 
         // Init
         connectWebSocket();

@@ -44,6 +44,9 @@ _CLOUDFLARED = str(Path(r"C:\Users\2025\AppData\Local\Temp\opencode\cloudflared.
 if not Path(_CLOUDFLARED).exists():
     _CLOUDFLARED = "cloudflared"
 
+# Dedicated ports: 8080 is the JARVIS dashboard, 8081 the local API server.
+_STORE_PORT = 8090
+
 _SAFETY_LOG = _DATA_DIR / "safety_log.json"
 FINANCIAL_ACTIONS_WORKER = frozenset({
     "apply", "quick_apply", "deliver", "sell", "gumroad_publish",
@@ -255,13 +258,13 @@ class AutonomousWorker:
                         self.end_headers()
 
             try:
-                _tunnel_server = http.server.HTTPServer(("0.0.0.0", 8080), _StoreHandler)
+                _tunnel_server = http.server.HTTPServer(("0.0.0.0", _STORE_PORT), _StoreHandler)
                 threading.Thread(target=_tunnel_server.serve_forever, daemon=True).start()
             except OSError:
                 pass
             try:
                 _tunnel_proc = subprocess.Popen(
-                    [_CLOUDFLARED, "tunnel", "--url", "http://localhost:8080"],
+                    [_CLOUDFLARED, "tunnel", "--url", f"http://localhost:{_STORE_PORT}"],
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     text=True, encoding="utf-8", errors="replace",
                     creationflags=_NO_WINDOW
@@ -469,7 +472,7 @@ class AutonomousWorker:
             "list_product": lambda: self.list_product(_first(target), _first(value)),
             "activate": lambda: self.activate_account(_first(target), _first(value)),
             "catalog": self.build_catalog,
-            "serve": lambda: self.serve_products(int(target) if target else 8080),
+            "serve": lambda: self.serve_products(int(target) if target else _STORE_PORT),
             "catalog_json": self.get_catalog_json,
             "github": lambda: self.prepare_github(_first(target)),
             "more": lambda: self.more_products(_first(target)),
@@ -1627,15 +1630,15 @@ body{{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e
                         f"Share this link to sell products.")
             lan_ip = self._get_lan_ip()
             return (f"Store built at {deploy_dir}/store.html\n"
-                    f"Local: http://localhost:8080\n"
-                    f"LAN: http://{lan_ip}:8080\n"
+                    f"Local: http://localhost:{_STORE_PORT}\n"
+                    f"LAN: http://{lan_ip}:{_STORE_PORT}\n"
                     f"cloudflared tunnel unavailable on this network.\n"
                     f"{len(catalog)} products, ${total} value ready to sell.")
         except Exception as e:
             lan_ip = self._get_lan_ip()
             return (f"Store built at {deploy_dir}/store.html\n"
-                    f"Local: http://localhost:8080\n"
-                    f"LAN: http://{lan_ip}:8080\n"
+                    f"Local: http://localhost:{_STORE_PORT}\n"
+                    f"LAN: http://{lan_ip}:{_STORE_PORT}\n"
                     f"Deploy error: {e}")
 
     def redeploy(self):
@@ -2052,7 +2055,7 @@ body{{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e
         lines.append(f"  Worker state: {self._state.get('status', 'idle')}")
         return "\n".join(lines)
 
-    def serve_products(self, port=8080):
+    def serve_products(self, port=_STORE_PORT):
         import http.server
         import threading
         products_dir = _DATA_DIR / "products"

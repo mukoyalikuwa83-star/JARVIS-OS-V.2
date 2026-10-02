@@ -10,6 +10,7 @@ from memory.task_history import record_task
 class TaskStatus(Enum):
     PENDING    = "pending"
     RUNNING    = "running"
+    CANCELLING = "cancelling"
     COMPLETED  = "completed"
     FAILED     = "failed"
     CANCELLED  = "cancelled"
@@ -160,16 +161,27 @@ class TaskQueue:
             task = self._tasks.get(task_id)
             if not task:
                 return False
-            if task.status in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED):
+            if task.status in (
+                TaskStatus.COMPLETED,
+                TaskStatus.FAILED,
+                TaskStatus.CANCELLED,
+                TaskStatus.CANCELLING,
+            ):
                 return False
 
             task.cancel_flag.set()
-            task.status = TaskStatus.CANCELLED
-            task.phase = "Cancelled"
+            if task.status == TaskStatus.PENDING:
+                task.status = TaskStatus.CANCELLED
+                task.phase = "Cancelled"
+            else:
+                # A running worker cooperates at its next cancellation check.
+                # Keep that distinction visible until the worker has stopped.
+                task.status = TaskStatus.CANCELLING
+                task.phase = "Cancelling"
             on_cancel = task.on_cancel
             if task in self._queue:
                 self._queue.remove(task)
-            print(f"[TaskQueue] 🚫 Task cancelled: [{task_id}]")
+            print(f"[TaskQueue] 🚫 Cancellation requested: [{task_id}]")
         if on_cancel:
             try:
                 on_cancel()
@@ -180,8 +192,18 @@ class TaskQueue:
         return True
 
 
-    def cancel_running(self, *args, **kwargs):
-        return False
+    def cancel_running(self, task_id: str | None = None) -> bool:
+        """Request cancellation of a running task, or all running tasks."""
+        with self._lock:
+            running_ids = [
+                task.task_id
+                for task in self._tasks.values()
+                if task.status == TaskStatus.RUNNING
+                and (task_id is None or task.task_id == task_id)
+            ]
+
+        cancelled = [self.cancel(running_id) for running_id in running_ids]
+        return any(cancelled)
 
 
     def get_status(self, task_id: str) -> dict | None:
@@ -262,6 +284,8 @@ class TaskQueue:
                 warnings: list[str] | None = None,
             ) -> None:
                 with self._lock:
+                    if task.cancel_flag.is_set():
+                        return
                     if percent is not None:
                         task.progress = max(0, min(100, int(percent)))
                     if phase:
@@ -270,6 +294,14 @@ class TaskQueue:
                         task.artifacts = [str(item) for item in artifacts]
                     if warnings is not None:
                         task.warnings = [str(item) for item in warnings]
+
+            if task.cancel_flag.is_set():
+                with self._condition:
+                    task.status = TaskStatus.CANCELLED
+                    task.phase = "Cancelled"
+                    self._active_count = max(0, self._active_count - 1)
+                    self._condition.notify_all()
+                return
 
             if task.runner:
                 update_progress(1, "Starting")
@@ -297,6 +329,7 @@ class TaskQueue:
             with self._lock:
                 if task.cancel_flag.is_set():
                     task.status = TaskStatus.CANCELLED
+                    task.phase = "Cancelled"
                 else:
                     task.status = TaskStatus.COMPLETED
                     task.result = task.result or result
@@ -344,7 +377,10 @@ class TaskQueue:
                 except Exception as e:
                     print(f"[TaskQueue] ⚠️ task history save failed: {e}")
 
-            print(f"[TaskQueue] ✅ Completed: [{task.task_id}]")
+            if task.status == TaskStatus.CANCELLED:
+                print(f"[TaskQueue] 🚫 Cancelled: [{task.task_id}]")
+            else:
+                print(f"[TaskQueue] ✅ Completed: [{task.task_id}]")
 
         except Exception as e:
             with self._lock:

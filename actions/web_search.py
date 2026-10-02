@@ -271,3 +271,7 @@ def web_search(
     except Exception as e:
         print(f"[WebSearch] ❌ All backends failed: {e}")
         return f"Search failed: {e}"
+
+
+# Stable handler name used by integrations that load actions by capability.
+handle_web_search = web_search

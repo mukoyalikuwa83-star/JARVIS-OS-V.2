@@ -9,8 +9,12 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from pathlib import Path
+from urllib.parse import urlsplit
 import asyncio
 import json
+import os
+import sys
+import time
 import uvicorn
 
 from core.safety_guardian import get_safety_guardian, get_safety_status, KillLayer, KillReason
@@ -19,6 +23,11 @@ from core.credential_vault import get_vault
 from actions._api import _load_env
 
 _load_env()
+
+DASHBOARD_HOST = "127.0.0.1"
+DASHBOARD_PORT = 8080
+DASHBOARD_URL = f"http://{DASHBOARD_HOST}:{DASHBOARD_PORT}/"
+_DASHBOARD_STARTED_AT = time.monotonic()
 
 app = FastAPI(title="JARVIS Dashboard")
 
@@ -29,6 +38,38 @@ templates = Jinja2Templates(directory=str(templates_dir))
 
 # WebSocket connections for real-time updates
 active_websockets: List[WebSocket] = []
+_status_broadcast_task: asyncio.Task | None = None
+
+
+def _is_local_same_origin(host: str, origin: str | None, scheme: str) -> bool:
+    """Limit this control surface to same-origin requests on loopback."""
+    if not host:
+        return False
+    try:
+        host_parts = urlsplit(f"//{host}")
+        if host_parts.hostname not in {"127.0.0.1", "localhost"}:
+            return False
+        if origin:
+            origin_parts = urlsplit(origin)
+            return (
+                origin_parts.scheme == scheme
+                and origin_parts.hostname == host_parts.hostname
+                and origin_parts.port == host_parts.port
+            )
+        return True
+    except ValueError:
+        return False
+
+
+@app.middleware("http")
+async def enforce_local_dashboard(request: Request, call_next):
+    if not _is_local_same_origin(
+        request.headers.get("host", ""),
+        request.headers.get("origin"),
+        request.url.scheme,
+    ):
+        return JSONResponse({"detail": "Dashboard is available only from this computer."}, status_code=403)
+    return await call_next(request)
 
 class KillRequest(BaseModel):
     layer: str  # "LOCAL_STOP", "REMOTE_STOP", etc.
@@ -50,6 +91,7 @@ class ApprovalAction(BaseModel):
 
 @app.on_event("startup")
 async def startup():
+    global _status_broadcast_task
     # Initialize safety guardian monitoring
     from core.safety_guardian import get_safety_guardian
     sg = get_safety_guardian()
@@ -57,12 +99,28 @@ async def startup():
     
     # Broadcast initial status
     await broadcast_status()
+    _status_broadcast_task = asyncio.create_task(_broadcast_status_periodically())
 
 @app.on_event("shutdown")
 async def shutdown():
+    global _status_broadcast_task
+    if _status_broadcast_task and not _status_broadcast_task.done():
+        _status_broadcast_task.cancel()
+        try:
+            await _status_broadcast_task
+        except asyncio.CancelledError:
+            pass
+    _status_broadcast_task = None
     from core.safety_guardian import get_safety_guardian
     sg = get_safety_guardian()
     await sg.stop_monitoring()
+
+
+async def _broadcast_status_periodically():
+    """Keep the dashboard current when JARVIS changes safety state internally."""
+    while True:
+        await asyncio.sleep(5)
+        await broadcast_status()
 
 async def broadcast_status():
     """Broadcast safety status to all connected websockets."""
@@ -85,6 +143,34 @@ async def dashboard(request: Request):
 async def get_status():
     return get_safety_status()
 
+@app.get("/api/overview")
+async def get_overview():
+    """Return useful runtime/readiness metadata without exposing credentials."""
+    safety = get_safety_status()
+    gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    home_assistant_url = os.environ.get("JARVIS_HOME_ASSISTANT_URL", "").strip()
+    home_assistant_token = os.environ.get("JARVIS_HOME_ASSISTANT_TOKEN", "").strip()
+
+    def configured(value: str) -> bool:
+        return bool(value and not value.upper().startswith("YOUR_"))
+
+    breakers = safety.get("circuit_breakers", {})
+    heartbeats = safety.get("heartbeats", {})
+    return {
+        "runtime_seconds": round(time.monotonic() - _DASHBOARD_STARTED_AT),
+        "process_id": os.getpid(),
+        "python_version": sys.version.split()[0],
+        "active_kills": len(safety.get("active_kills", [])),
+        "heartbeats": len(heartbeats),
+        "missed_heartbeats": sum(1 for item in heartbeats.values() if item.get("missed", 0) > 0),
+        "circuit_breakers": len(breakers),
+        "triggered_breakers": sum(1 for item in breakers.values() if item.get("triggered")),
+        "integrations": [
+            {"name": "Gemini Live", "configured": configured(gemini_key)},
+            {"name": "Home Assistant", "configured": configured(home_assistant_url) and configured(home_assistant_token)},
+        ],
+    }
+
 @app.get("/api/audit/stats")
 async def audit_stats():
     from core.audit_log import get_audit_stats
@@ -93,7 +179,7 @@ async def audit_stats():
 @app.get("/api/audit/recent")
 async def audit_recent(domain: Optional[str] = None, count: int = 50):
     from core.audit_log import get_recent_entries
-    return get_recent_entries(domain=domain, count=count)
+    return get_recent_entries(domain=domain, count=max(1, min(int(count), 200)))
 
 @app.get("/api/audit/search")
 async def audit_search(query: str, domain: Optional[str] = None, limit: int = 100):
@@ -219,6 +305,16 @@ async def reconciliation(days: int = 30):
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    origin_scheme = {"ws": "http", "wss": "https"}.get(
+        websocket.url.scheme, websocket.url.scheme
+    )
+    if not _is_local_same_origin(
+        websocket.headers.get("host", ""),
+        websocket.headers.get("origin"),
+        origin_scheme,
+    ):
+        await websocket.close(code=1008)
+        return
     await websocket.accept()
     active_websockets.append(websocket)
     try:
@@ -242,4 +338,4 @@ static_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host=DASHBOARD_HOST, port=DASHBOARD_PORT)

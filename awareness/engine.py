@@ -46,6 +46,9 @@ class AwarenessEngine:
         self.insight_cooldown = insight_cooldown
         self.state = AwarenessState()
         self._last_insight_time: dict[str, float] = {}
+        self._last_insight_message: dict[str, str] = {}
+        self._vscode_cache_at: float = 0.0
+        self._vscode_cache_value: bool = False
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._lock = threading.Lock()
@@ -152,6 +155,8 @@ class AwarenessEngine:
                 f"Repository detected: {current_project}",
                 PopupType.PRESENCE,
             )
+        else:
+            self._clear_insight("git_repo_detected")
 
         if vscode_active:
             self._maybe_surface_insight(
@@ -159,6 +164,8 @@ class AwarenessEngine:
                 "Development environment active.",
                 PopupType.PRESENCE,
             )
+        else:
+            self._clear_insight("vscode_active")
 
         if related_project:
             self._maybe_surface_insight(
@@ -166,6 +173,8 @@ class AwarenessEngine:
                 "Related project detected nearby.",
                 PopupType.PRESENCE,
             )
+        else:
+            self._clear_insight("related_project_detected")
 
     def _get_git_root(self) -> Optional[str]:
         path = os.getcwd()
@@ -177,6 +186,23 @@ class AwarenessEngine:
         return None
 
     def _is_vscode_active(self) -> bool:
+        now = time.time()
+        if now - self._vscode_cache_at < 10.0:
+            return self._vscode_cache_value
+        result = self._detect_vscode_active()
+        self._vscode_cache_at = now
+        self._vscode_cache_value = result
+        return result
+
+    def _detect_vscode_active(self) -> bool:
+        try:
+            import psutil
+            for proc in psutil.process_iter(["name"]):
+                name = (proc.info.get("name") or "").lower()
+                if name in {"code.exe", "code - insiders.exe", "codium.exe", "code"}:
+                    return True
+        except Exception:
+            pass
         try:
             output = subprocess.check_output(
                 ["ps", "aux"],
@@ -191,6 +217,17 @@ class AwarenessEngine:
             return False
 
     def _get_frontmost_app(self) -> str:
+        if os.name == "nt":
+            try:
+                import ctypes
+                user32 = ctypes.windll.user32
+                hwnd = user32.GetForegroundWindow()
+                length = user32.GetWindowTextLengthW(hwnd)
+                buf = ctypes.create_unicode_buffer(length + 1)
+                user32.GetWindowTextW(hwnd, buf, length + 1)
+                return buf.value or ""
+            except Exception:
+                return ""
         try:
             if os.name == "posix":
                 script = (
@@ -227,12 +264,19 @@ class AwarenessEngine:
 
     def _maybe_surface_insight(self, key: str, insight: str, popup_type: PopupType) -> None:
         now = time.time()
+        if self._last_insight_message.get(key) == insight:
+            return
         last_time = self._last_insight_time.get(key, 0)
         if now - last_time >= self.insight_cooldown:
             self.popup_scheduler(insight, popup_type)
             self._last_insight_time[key] = now
+            self._last_insight_message[key] = insight
             self.record_event(insight)
             print(f"[Awareness] 💡 Surfaced insight: {insight}")
+
+    def _clear_insight(self, key: str) -> None:
+        self._last_insight_time.pop(key, None)
+        self._last_insight_message.pop(key, None)
 
 
 if __name__ == "__main__":

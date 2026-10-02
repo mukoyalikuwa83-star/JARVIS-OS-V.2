@@ -9,8 +9,24 @@ import re
 import ctypes
 from pathlib import Path
 
-# Auto-configure Tesseract if installed on Windows
-def _configure_tesseract():
+# Auto-configure Tesseract on first OCR use (never at import time).
+# Importing pytesseract pulls in pandas, and the AppData scan below touches the
+# filesystem, so doing this eagerly made every JARVIS start pay for the OCR
+# stack even when the user never asked for screen automation.
+_tesseract_configured = False
+
+
+def ensure_tesseract() -> None:
+    """Public entry point: configure Tesseract before running OCR."""
+    _configure_tesseract()
+
+
+def _configure_tesseract(force: bool = False):
+    """Locate the Tesseract binary; runs once, when OCR is actually needed."""
+    global _tesseract_configured
+    if _tesseract_configured and not force:
+        return
+    _tesseract_configured = True
     import shutil
     t = shutil.which("tesseract")
     if t:
@@ -43,9 +59,6 @@ def _configure_tesseract():
                 pass
             return
 
-_configure_tesseract()
-
-
 def _run(cmd, timeout=10):
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
@@ -58,7 +71,7 @@ def _run(cmd, timeout=10):
 def _safe_import():
     try:
         import pyautogui
-        pyautogui.FAILSAFE = False
+        pyautogui.FAILSAFE = True
         pyautogui.PAUSE = 0.3
         return pyautogui
     except ImportError:
@@ -188,6 +201,7 @@ def _click_on_text(text, double=False):
         return f"Click-on-text failed: could not grab screen ({e})"
     # Prefer OCR word boxes for exact pixel targeting
     try:
+        _configure_tesseract()
         import pytesseract
         data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
         n = len(data.get("text", []))
@@ -341,6 +355,7 @@ def _find_on_screen(description):
 
 def _extract_text(region=""):
     try:
+        _configure_tesseract()
         import pytesseract
         from PIL import ImageGrab
         if region:
@@ -395,6 +410,7 @@ def _verify_action(expected=""):
         return f"VERIFY_OK|{result}"
     except Exception as e:
         try:
+            _configure_tesseract()
             import pytesseract
             from PIL import Image
             img = Image.open(io.BytesIO(img_bytes))
@@ -533,7 +549,7 @@ def _move_window(title, x, y):
 
 def _wait_and_click(description, x, y):
     import pyautogui
-    pyautogui.FAILSAFE = False
+    pyautogui.FAILSAFE = True
     time.sleep(2)
     if x and y:
         pyautogui.moveTo(x, y, duration=0.3)

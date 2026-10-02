@@ -80,6 +80,8 @@ def _list_cameras():
 
 def _ocr_image(params):
     try:
+        from actions.screen_automation import ensure_tesseract
+        ensure_tesseract()
         import pytesseract
         from PIL import Image
         path = params.get("path", "")

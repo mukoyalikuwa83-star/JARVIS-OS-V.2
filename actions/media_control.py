@@ -280,3 +280,6 @@ def media_control(parameters: dict | None = None, response=None, player=None, se
     if _SYSTEM == "Windows" and platform_name == "spotify":
         return _spotify_windows(action, query)
     return _generic_media_key(action)
+
+
+handle_media_control = media_control

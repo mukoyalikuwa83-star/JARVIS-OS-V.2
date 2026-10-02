@@ -26,11 +26,12 @@ EXPECTED_TOOLS = {
     "screen_awareness", "real_hustle", "autonomous_worker", "account_manager",
     "noise_filter", "instagram_browser", "safe_text_entry", "jarvis_file_stamp",
     "gumroad_api", "social_media", "content_engine",
+    "automation_engine", "camera_control", "cybersecurity", "data_analysis",
+    "phone_tracking", "smart_home", "stripe_payments", "vehicle_control",
 }
 
 
-def declared_tools(main_path: Path) -> list[str]:
-    tree = ast.parse(main_path.read_text(encoding="utf-8-sig"))
+def _tool_names(tree: ast.AST) -> list[str] | None:
     for node in ast.walk(tree):
         if not isinstance(node, ast.Assign):
             continue
@@ -44,6 +45,30 @@ def declared_tools(main_path: Path) -> list[str]:
                 if isinstance(key, ast.Constant) and key.value == "name" and isinstance(value, ast.Constant):
                     names.append(str(value.value))
         return names
+    return None
+
+
+def declared_tools(main_path: Path) -> list[str]:
+    """Read the declarations where the runtime imports them from.
+
+    The declarations were extracted from ``main.py`` into ``core/tool_registry.py``;
+    following that import keeps the audit in sync without importing the app (and
+    initializing Qt, audio, or other runtime services).
+    """
+    tree = ast.parse(main_path.read_text(encoding="utf-8-sig"))
+    names = _tool_names(tree)
+    if names is not None:
+        return names
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ImportFrom) or not node.module:
+            continue
+        if not any(alias.name == "TOOL_DECLARATIONS" for alias in node.names):
+            continue
+        module_path = main_path.parent.joinpath(*node.module.split(".")).with_suffix(".py")
+        if module_path.is_file():
+            names = _tool_names(ast.parse(module_path.read_text(encoding="utf-8-sig")))
+            if names is not None:
+                return names
     return []
 
 
@@ -75,7 +100,9 @@ def repository_findings(root: Path) -> list[Finding]:
         ))
 
     exception_count = 0
-    for path in [main_path, ui_path, *sorted((root / "actions").glob("*.py"))]:
+    runtime_paths = [main_path, ui_path, *sorted((root / "actions").glob("*.py"))]
+    runtime_paths = [path for path in runtime_paths if path.is_file()]
+    for path in runtime_paths:
         source = path.read_text(encoding="utf-8", errors="replace")
         exception_count += len(re.findall(r"except Exception(?:\s+as\s+\w+)?:", source))
     if exception_count >= 100:
@@ -102,8 +129,11 @@ def repository_findings(root: Path) -> list[Finding]:
             "Affected files: " + ", ".join(deprecated_sdk_files),
         ))
 
-    ui_source = ui_path.read_text(encoding="utf-8", errors="replace")
-    hardcoded = len(re.findall(r"#[0-9A-Fa-f]{6,8}", ui_source))
+    if ui_path.is_file():
+        ui_source = ui_path.read_text(encoding="utf-8", errors="replace")
+        hardcoded = len(re.findall(r"#[0-9A-Fa-f]{6,8}", ui_source))
+    else:
+        hardcoded = 0
     if hardcoded >= 50:
         findings.append(Finding(
             "P2", "UI contains extensive hard-coded color values", "Theming",

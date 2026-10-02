@@ -227,17 +227,16 @@ class ContentEngineAgent(DomainAgent):
         return result
         
     async def _publish_to_platform(self, draft: Dict, channel: str) -> Dict:
-        # Placeholder for actual platform APIs
         return {
-            "success": True,
-            "platform_id": f"{channel}_{int(time.time())}",
-            "url": f"https://{channel}.com/post/placeholder"
+            "success": False,
+            "error": f"Publishing for {channel} is not connected. The draft was not published.",
         }
         
     async def _schedule_content(self, params: Dict) -> Dict:
-        draft_id = params.get("draft_id")
-        schedule_time = params.get("schedule_time")
-        return {"success": True, "scheduled": True, "time": schedule_time}
+        return {
+            "success": False,
+            "error": "No publishing scheduler is connected. The content was not scheduled.",
+        }
         
     async def _get_queue(self) -> Dict:
         return {
@@ -247,13 +246,10 @@ class ContentEngineAgent(DomainAgent):
         }
         
     async def _get_analytics(self, params: Dict) -> Dict:
-        channel = params.get("channel")
-        return {"success": True, "analytics": {}}
+        return {"success": False, "error": "No channel analytics integration is connected."}
         
     async def _monetize(self, params: Dict) -> Dict:
-        channel = params.get("channel")
-        method = params.get("method", "affiliate")
-        return {"success": True, "monetization": "configured"}
+        return {"success": False, "error": "No monetization provider is connected. No account was changed."}
         
     def get_status(self) -> Dict:
         return {
@@ -267,3 +263,34 @@ class ContentEngineAgent(DomainAgent):
         
     def get_proposals(self) -> List[Dict]:
         return []
+
+
+_content_engine_agent: ContentEngineAgent | None = None
+
+
+def handle(parameters: Dict | None = None, response=None, player=None, session_memory=None) -> Dict[str, Any]:
+    """Adapt JARVIS's content-tool schema to the draft-only content agent."""
+    global _content_engine_agent
+    params = dict(parameters or {})
+    action = str(params.pop("action", "")).strip().lower()
+    if not action:
+        return {"success": False, "error": "Choose a content-engine action."}
+    if _content_engine_agent is None:
+        _content_engine_agent = ContentEngineAgent()
+    try:
+        if action == "status":
+            return {"success": True, "status": _content_engine_agent.get_status()}
+        content_types = {"blog", "tutorial", "comparison", "description", "seo"}
+        if action not in content_types:
+            return {"success": False, "error": f"Unsupported content action: {action}"}
+        topic = str(params.get("target", "")).strip()
+        if not topic:
+            return {"success": False, "error": f"Provide a topic or product for the {action} draft."}
+        return asyncio.run(_content_engine_agent.handle("create_content", {
+            "topic": topic,
+            "type": action,
+            "channel": "blog",
+            "style": params.get("value", ""),
+        }))
+    except Exception as exc:
+        return {"success": False, "error": f"Content engine failed: {exc}"}

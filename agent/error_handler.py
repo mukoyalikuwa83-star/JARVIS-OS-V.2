@@ -149,14 +149,14 @@ Attempt number: {attempt}"""
             "replan": ErrorDecision.REPLAN,
             "abort":  ErrorDecision.ABORT,
         }
-        result["decision"] = decision_map.get(decision_str, ErrorDecision.REPLAN)
+        result["decision"] = decision_map.get(decision_str, "replan")
 
 
-        if step.get("critical") and result["decision"] == ErrorDecision.SKIP:
-            result["decision"]     = ErrorDecision.REPLAN
+        if step.get("critical") and result["decision"] == "skip":
+            result["decision"]     = "replan"
             result["user_message"] = "This step is critical — finding alternative approach."
 
-        print(f"[ErrorHandler] Decision: {result['decision'].value} — {result.get('reason', '')}")
+        print(f"[ErrorHandler] Decision: {result['decision']} — {result.get('reason', '')}")
         return result
 
     except Exception as e:
@@ -167,54 +167,4 @@ Attempt number: {attempt}"""
             "fix_suggestion": "Try alternative approach",
             "max_retries":    1,
             "user_message":   "Encountered an issue, adjusting approach."
-        }
-
-
-def generate_fix(step: dict, error: str, fix_suggestion: str) -> dict:
-    """
-    When decision is REPLAN and a fix suggestion exists,
-    generates a replacement step using generated_code as fallback.
-
-    Returns a modified step dict.
-    """
-    prompt = f"""A task step failed. Generate a replacement step.
-
-Original step:
-Tool: {step.get('tool')}
-Description: {step.get('description')}
-Parameters: {json.dumps(step.get('parameters', {}), indent=2)}
-
-Error: {error[:300]}
-Fix suggestion: {fix_suggestion}
-
-Write a Python script that accomplishes the same goal differently.
-Return ONLY the Python code, no explanation."""
-
-    try:
-        code = _generate_reply(prompt)
-        code = re.sub(r"```(?:python)?", "", code).strip().rstrip("`").strip()
-
-        return {
-            "step":        step.get("step"),
-            "tool":        "code_helper",
-            "description": f"Auto-fix for: {step.get('description')}",
-            "parameters": {
-                "action":      "run",
-                "description": fix_suggestion,
-                "code":        code,
-                "language":    "python"
-            },
-            "depends_on": step.get("depends_on", []),
-            "critical":   step.get("critical", False)
-        }
-
-    except Exception as e:
-        print(f"[ErrorHandler] ⚠️ Fix generation failed: {e}")
-        return {
-            "step":        step.get("step"),
-            "tool":        "generated_code",
-            "description": f"Fallback for: {step.get('description')}",
-            "parameters":  {"description": step.get("description", "")},
-            "depends_on":  step.get("depends_on", []),
-            "critical":    step.get("critical", False)
         }

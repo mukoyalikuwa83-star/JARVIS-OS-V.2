@@ -14,9 +14,29 @@ def get_base_dir() -> Path:
 BASE_DIR        = get_base_dir()
 API_CONFIG_PATH = BASE_DIR / "config" / "api_keys.json"
 
+# Keep this list aligned with agent.executor._call_tool.  The live assistant has
+# a much larger tool surface, but background plans can only run handlers that
+# AgentExecutor actually implements.
+AGENT_EXECUTOR_TOOLS = frozenset({
+    "open_app", "web_search", "deep_research", "game_updater",
+    "browser_control", "file_controller", "media_control", "code_helper",
+    "dev_agent", "screen_process", "send_message", "email_control",
+    "reminder", "youtube_video", "weather_report", "computer_settings",
+    "desktop_control", "computer_control", "flight_finder",
+    "create_presentation",
+})
+
 
 PLANNER_PROMPT = """You are the planning module of a personal AI assistant.
 Your job: break any user goal into a sequence of steps using ONLY the tools listed below.
+
+BACKGROUND EXECUTOR LIMIT: For agent_task plans, use only these executable tool names:
+open_app, web_search, deep_research, game_updater, browser_control,
+file_controller, media_control, code_helper, dev_agent, screen_process,
+send_message, email_control, reminder, youtube_video, weather_report,
+computer_settings, desktop_control, computer_control, flight_finder,
+create_presentation.
+Do not select other names from general assistant documentation below.
 
 ABSOLUTE RULES:
 - NEVER use generated_code or write Python scripts. It does not exist.
@@ -254,7 +274,7 @@ def _get_api_key() -> str:
     except Exception:
         pass
 
-    raise ValueError("Gemini API key not found. Set GEMINI_API_KEY or config/api_keys.json['gemini_api_key'].")
+    return ""
 
 
 def create_plan(goal: str, context: str = "") -> dict:
@@ -280,12 +300,14 @@ def create_plan(goal: str, context: str = "") -> dict:
         if "steps" not in plan or not isinstance(plan["steps"], list):
             raise ValueError("Invalid plan structure")
 
-        for step in plan["steps"]:
-            if step.get("tool") in ("generated_code",):
-                print(f"[Planner] ⚠️ generated_code detected in step {step.get('step')} — replacing with web_search")
-                desc = step.get("description", goal)
-                step["tool"] = "web_search"
-                step["parameters"] = {"query": desc[:200]}
+        unsupported = sorted({
+            str(step.get("tool") or "")
+            for step in plan["steps"]
+            if str(step.get("tool") or "") not in AGENT_EXECUTOR_TOOLS
+        })
+        if unsupported:
+            print(f"[Planner] ⚠️ Unsupported tools in plan {unsupported}; using safe fallback")
+            return _fallback_plan(goal)
 
         print(f"[Planner] ✅ Plan: {len(plan['steps'])} steps")
         for s in plan["steps"]:
@@ -455,10 +477,15 @@ Create a REVISED plan for the remaining work only. Do not repeat completed steps
         text     = re.sub(r"```(?:json)?", "", text).strip().rstrip("`").strip()
         plan     = json.loads(text)
 
-        for step in plan.get("steps", []):
-            if step.get("tool") == "generated_code":
-                step["tool"] = "web_search"
-                step["parameters"] = {"query": step.get("description", goal)[:200]}
+        unsupported = sorted({
+            str(step.get("tool") or "")
+            for step in plan.get("steps", [])
+            if str(step.get("tool") or "") not in AGENT_EXECUTOR_TOOLS
+        })
+        if unsupported:
+            error = f"The revised plan requested unavailable tools: {', '.join(unsupported)}. No further actions were run."
+            print(f"[Planner] ⚠️ {error}")
+            return {"goal": goal, "steps": [], "error": error}
 
         print(f"[Planner] 🔄 Revised plan: {len(plan['steps'])} steps")
         return plan

@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import asyncio
 import importlib.util
 import tempfile
@@ -391,6 +392,50 @@ class AutomatedChecklistTests(unittest.TestCase):
             passed, evidence, _notes = probe._file_probe(Path(directory))
         self.assertTrue(passed)
         self.assertIn("Access denied", evidence["outside_write"])
+
+    def test_retired_suite_is_reported_as_blocked_instead_of_failed(self):
+        probe = _load_script("qa_checklist_probe")
+        retired = ["tests.test_ui_regressions"]
+        self.assertEqual(probe._capability_status(False, retired), "blocked")
+        self.assertEqual(probe._capability_status(True, retired, "passed"), "passed")
+        self.assertEqual(probe._capability_status(False, []), "failed")
+        self.assertIn("retired", probe._coverage_note(retired))
+        self.assertEqual(probe._coverage_note([]), "")
+
+    def test_every_referenced_checklist_suite_exists_on_disk(self):
+        probe = _load_script("qa_checklist_probe")
+        referenced = re.findall(
+            r'"(tests\.[a-z0-9_]+)\.',
+            (ROOT / "scripts" / "qa_checklist_probe.py").read_text(encoding="utf-8"),
+        )
+        self.assertTrue(referenced, "the probe should reference real suites")
+        for module in sorted(set(referenced)):
+            with self.subTest(module=module):
+                self.assertTrue(
+                    (ROOT / Path(*module.split("."))).with_suffix(".py").is_file(),
+                    f"{module} no longer exists; the probe would report a false failure",
+                )
+
+    def test_missing_ui_probe_is_reported_as_unavailable(self):
+        probe = _load_script("qa_checklist_probe")
+        with tempfile.TemporaryDirectory() as directory:
+            if probe.ROOT.joinpath("scripts", "qa_ui_probe.py").is_file():
+                self.skipTest("the UI probe is present in this checkout")
+            available, evidence, notes = probe._ui_probe(Path(directory))
+        self.assertIsNone(available)
+        self.assertEqual(evidence, {})
+        self.assertIn("retired", notes)
+
+    def test_run_tests_survives_utf8_child_output(self):
+        probe = _load_script("qa_checklist_probe")
+        with patch.object(
+            probe.subprocess,
+            "run",
+            return_value=SimpleNamespace(returncode=0, stdout="\u2705 passed", stderr=None),
+        ):
+            ok, details = probe._run_tests("tests.test_research_body")
+        self.assertTrue(ok)
+        self.assertIn("passed", details)
 
 
 if __name__ == "__main__":

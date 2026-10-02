@@ -24,7 +24,7 @@ from PyQt6.QtCore import (
 )
 
 from PyQt6.QtGui import (
-    QAction, QBrush, QColor, QDragEnterEvent, QDropEvent, QFont as _QFont,
+    QAction, QBrush, QColor, QDesktopServices, QDragEnterEvent, QDropEvent, QFont as _QFont,
     QFontDatabase, QIcon, QImage, QKeySequence, QLinearGradient, QPainter,
     QPainterPath, QPen, QPixmap, QRadialGradient, QShortcut,
 )
@@ -6659,6 +6659,15 @@ class MainWindow(QMainWindow):
             pass
         if self._vision_preview is not None:
             self._vision_preview.stop()
+        # Really quitting (no tray): tell the assistant so it writes the
+        # intentional-shutdown marker; otherwise the watchdog restarts us.
+        if not getattr(self, "_force_quit", False):
+            self._force_quit = True
+            try:
+                if self.on_quit_requested:
+                    self.on_quit_requested()
+            except Exception as exc:
+                self._log.append_log(f"ERR: Shutdown cleanup — {exc}")
         event.accept()
         app = QApplication.instance()
         if app is not None:
@@ -7922,6 +7931,13 @@ class MainWindow(QMainWindow):
         self._theme_btn.setAccessibleName("Cycle theme")
         self._theme_btn.clicked.connect(self._cycle_theme)
         track_lay.addWidget(self._theme_btn)
+        track_lay.addWidget(_track_separator())
+
+        self._dashboard_btn = _ctrl_btn("DASHBOARD", 132)
+        self._dashboard_btn.setToolTip("Open the local JARVIS safety and activity dashboard")
+        self._dashboard_btn.setAccessibleName("Open JARVIS dashboard in your browser")
+        self._dashboard_btn.clicked.connect(self._open_dashboard)
+        track_lay.addWidget(self._dashboard_btn)
         lay.addWidget(track)
 
         lay.addStretch(1)
@@ -7964,6 +7980,17 @@ class MainWindow(QMainWindow):
         self._style_command_controls()
 
         return w
+
+
+    def _open_dashboard(self):
+        """Open the loopback-only safety dashboard in the default browser."""
+        from api.dashboard import DASHBOARD_URL
+        if not QDesktopServices.openUrl(QUrl(DASHBOARD_URL)):
+            ToastManager.show_toast(
+                self,
+                "Could not open the JARVIS dashboard. Check that its local service is running.",
+                "error",
+            )
 
 
     def _show_left_panel_popup(self):

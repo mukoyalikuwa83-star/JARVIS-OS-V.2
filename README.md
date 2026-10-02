@@ -95,7 +95,7 @@ Template files are included for local setup:
 
 - Keep `.env` and local secret files out of git.
 - Do not commit `memory/long_term.json` or `config/api_keys.json`.
-- Run `python3 -m py_compile main.py ui.py` before tagging a release.
+- Run `python3 -m py_compile main.py ui/__init__.py ui/themes.py` before tagging a release.
 
 ## License
 

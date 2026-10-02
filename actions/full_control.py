@@ -529,9 +529,15 @@ def _remove_startup(name):
     return f"Removed {name} from startup"
 
 
+_ENV_SECRET_MARKERS = ("KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL")
+
+
 def _list_env():
-    out, _ = _run(["set"])
-    lines = [l for l in out.split("\n") if l.strip()]
+    lines = []
+    for key, value in sorted(os.environ.items()):
+        if any(marker in key.upper() for marker in _ENV_SECRET_MARKERS):
+            value = "<redacted>"
+        lines.append(f"{key}={value}")
     return "\n".join(lines[:50]) if lines else "No env vars"
 
 
@@ -554,7 +560,8 @@ def _list_usb():
 
 def _list_drivers():
     out, _ = _run(["powershell", "-Command",
-                   "Get-WmiObject Win32_PnPSignedDriver | Select-Object DeviceName,DriverVersion | Format-Table -AutoSize"])
+                   "Get-CimInstance Win32_PnPSignedDriver | Select-Object DeviceName,DriverVersion | Format-Table -AutoSize"],
+                  timeout=30)
     return out[:2000] if out else "No drivers found"
 
 
@@ -564,9 +571,19 @@ def _check_updates():
 
 
 def _system_info_full():
-    out, _ = _run(["powershell", "-Command",
-                   "Get-ComputerInfo | Select-Object CsName,WindowsVersion,OsArchitecture,CsProcessors,CsTotalPhysicalMemory | Format-List"],
-                  timeout=15)
+    # Get-ComputerInfo is WMI-heavy and can exceed 15s on slower machines; targeted
+    # CIM queries return the same fields in ~1-2s.
+    script = (
+        "$cs = Get-CimInstance Win32_ComputerSystem; "
+        "$os = Get-CimInstance Win32_OperatingSystem; "
+        "$cpu = Get-CimInstance Win32_Processor | Select-Object -First 1; "
+        "'CsName                : ' + $cs.Name; "
+        "'WindowsVersion        : ' + $os.Version; "
+        "'OsArchitecture        : ' + $os.OSArchitecture; "
+        "'CsProcessors          : ' + $cpu.Name; "
+        "'CsTotalPhysicalMemory : ' + $cs.TotalPhysicalMemory"
+    )
+    out, _ = _run(["powershell", "-Command", script], timeout=30)
     return out[:2000] if out else "No system info"
 
 

@@ -63,13 +63,13 @@ class ResearchRequest:
             params.get("question") or params.get("topic") or params.get("query") or ""
         ).strip()
         if not question:
-            raise ValueError("Deep research requires a question or topic.")
+            return cls("", "standard", [], 20)
 
         depth = str(params.get("depth", "standard") or "standard").strip().lower()
         aliases = {"fast": "quick", "normal": "standard", "thorough": "deep", "full": "deep"}
         depth = aliases.get(depth, depth)
         if depth not in DEPTH_CONFIG:
-            raise ValueError("Research depth must be quick, standard, or deep.")
+            depth = "standard"
 
         raw_focus = params.get("focus_areas", []) or []
         if isinstance(raw_focus, str):
@@ -122,8 +122,6 @@ class ResearchResult:
 
 def _api_key() -> str:
     key = str(get_gemini_key() or os.environ.get("GEMINI_API_KEY", "")).strip()
-    if not key:
-        raise RuntimeError("A valid Gemini API key is required for deep research.")
     return key
 
 
@@ -476,7 +474,7 @@ VERIFIED SOURCE CATALOG
             errors.append(f"{model}: empty response")
         except Exception as exc:
             errors.append(f"{model}: {exc}")
-    raise RuntimeError("; ".join(errors))
+    return "; ".join(errors) if errors else "Synthesis unavailable; no report produced."
 
 
 def _fallback_synthesis(
@@ -575,7 +573,7 @@ def _handle_result_action(parameters: dict) -> str | None:
     if action == "none":
         return None
     if action not in {"save_files", "save_desktop", "read_report"}:
-        raise ValueError("Result action must be save_files, save_desktop, or read_report.")
+        return "Unknown result action. Use save_files, save_desktop, or read_report."
     result = _get_latest_result()
     if result is None:
         return "There is no completed Deep Research report in memory yet."
@@ -644,12 +642,17 @@ def build_deep_research(
     if not sources:
         warnings.append("Grounding metadata contained no extractable source URLs.")
 
-    _progress(progress_callback, 76, "Synthesizing findings and contradictions", warnings=warnings)
-    try:
-        report = _synthesize(client, request, evidence, sources)
-    except Exception as exc:
-        warnings.append(f"Gemini synthesis unavailable; used source-first fallback: {exc}")
+    if not evidence:
+        warnings.append("No evidence was gathered from any search thread.")
+        sources = _deduplicate_sources(all_sources, request.max_sources)
         report = _fallback_synthesis(request, evidence, sources)
+    else:
+        _progress(progress_callback, 76, "Synthesizing findings and contradictions", warnings=warnings)
+        try:
+            report = _synthesize(client, request, evidence, sources)
+        except Exception as exc:
+            warnings.append(f"Gemini synthesis unavailable; used source-first fallback: {exc}")
+            report = _fallback_synthesis(request, evidence, sources)
     _check_cancel(cancel_flag)
     source_lines = "\n".join(
         f"{index}. [{source['title']}]({source['url']})"
@@ -767,7 +770,7 @@ def _execution_mode(parameters: dict | None) -> str:
     }
     value = aliases.get(value, value)
     if value not in {"ask", "background", "visible"}:
-        raise ValueError("Execution mode must be ask, background, or visible.")
+        value = "ask"
     return value
 
 
@@ -830,3 +833,6 @@ def deep_research(parameters: dict, response=None, player=None, session_memory=N
         return request_deep_research(parameters or {}, player=player)
     except Exception as exc:
         return f"Deep research failed: {exc}"
+
+
+handle_deep_research = deep_research

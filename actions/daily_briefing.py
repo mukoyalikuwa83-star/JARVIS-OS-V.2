@@ -29,8 +29,18 @@ def get_weather_summary(params=None):
     try:
         url = f"https://wttr.in/{city}?format=j1"
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        resp = urllib.request.urlopen(req, timeout=10, context=ctx)
-        data = json.loads(resp.read())
+        data = None
+        last_err = None
+        for _attempt in range(2):
+            try:
+                resp = urllib.request.urlopen(req, timeout=10, context=ctx)
+                data = json.loads(resp.read())
+                break
+            except Exception as e:
+                last_err = e
+                time.sleep(0.8)
+        if data is None:
+            raise last_err
         current = data.get("current_condition", [{}])[0]
         today = data.get("weather", [{}])[0] if data.get("weather") else {}
         return json.dumps({
